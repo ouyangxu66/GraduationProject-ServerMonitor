@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    项目对象模型(POM)配置文件，用于monitor-project监控项目。
+    这是父POM文件，定义了所有子模块共享的通用配置、依赖项和属性。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- 指定使用的POM模型版本 -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        项目标识信息。
+        这些坐标在Maven仓库中唯一标识此项目。
+    -->
+    <groupId>com.xu</groupId>
+    <artifactId>monitor-project</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>monitor-project</name>
+    <description>monitor-project</description>
+
+    <!--
+        项目属性，定义版本变量和其他配置值。
+        可以在整个POM中通过${property-name}语法引用这些属性。
+    -->
+    <properties>
+        <java.version>17</java.version>
+        <oshi.version>6.9.1</oshi.version>
+        <spring-boot.version>3.3.5</spring-boot.version>
+        <spring-boot-starter-web.version>3.3.0</spring-boot-starter-web.version>
+    </properties>
+
+    <!--
+        依赖管理部分，定义子模块中使用的依赖版本。
+        子模块可以继承这些版本而无需显式指定。
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- 核心Spring Boot启动依赖 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+
+            <!-- Spring Boot测试框架 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring-boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- 核心硬件采集库 -->
+            <!-- OSHI核心库，用于系统和硬件信息收集 -->
+            <dependency>
+                <groupId>com.github.oshi</groupId>
+                <artifactId>oshi-core</artifactId>
+                <version>${oshi.version}</version>
+            </dependency>
+
+            <!-- Web模块依赖 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot-starter-web.version}</version>
+            </dependency>
+
+            <!-- 引入公共模块 -->
+            <dependency>
+                <groupId>com.xu</groupId>
+                <artifactId>monitor-common</artifactId>
+                <version>0.0.1-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!--
+        构建配置部分，定义构建过程中使用的插件及其设置。
+    -->
+    <build>
+        <plugins>
+            <!--
+                Maven编译器插件配置。
+                设置注解处理器，特别是用于Lombok。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!--
+                Spring Boot Maven插件配置。
+                用于打包Spring Boot应用程序和管理排除项。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

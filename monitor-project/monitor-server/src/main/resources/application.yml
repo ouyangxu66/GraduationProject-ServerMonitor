@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+monitor:
+  app-secret: abc12345
+
+# 👇 InfluxDB 配置
+influx:
+  url: http://localhost:8086
+  token: GCqeNNPRnEarrVZPlQVb116O43O_9if2q6FlIj-OR8SxLLkMmB3Pg2kCBtQZzeS3_2-EiWnKGbjt4LaQvIL7Cw== #InfluxDB Token
+  org: my-org
+  bucket: monitor_bucket

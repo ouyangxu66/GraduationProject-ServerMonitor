@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="357c39f9-f2bb-4404-af31-bd1fa999a38e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/src/main/java/com/xu/monitorclient/MonitorClientApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/src/main/java/com/xu/monitorclient/task/CollectorTask.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-client/src/test/java/com/xu/monitorclient/MonitorClientApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/src/main/java/com/xu/monitorcommon/MonitorCommonApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/src/main/java/com/xu/monitorcommon/moudule/BaseMonitorModel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/src/main/java/com/xu/monitorcommon/utils/SystemMonitorUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-common/src/test/java/com/xu/monitorcommon/MonitorCommonApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/MonitorServerApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/config/InfluxDBConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/controller/MonitorController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/controller/ReportController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/service/monitorservice/MonitorService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/java/com/xu/monitorserver/service/monitorservice/MonitorServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-server/src/test/java/com/xu/monitorserver/MonitorServerApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/src/main/java/com/xu/monitorweb/MonitorWebApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/monitor-web/src/test/java/com/xu/monitorweb/MonitorWebApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$/monitor-server">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand />
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="35xgfPj1a2OKTwUlrfCQghU4nZE" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Application.SystemMonitorUtil.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.monitor-project [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.monitor-project [install].executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Spring Boot.MonitorClientApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.MonitorServerApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;17&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/GraduationProject&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.28571427&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;MavenSettings&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Spring Boot.MonitorServerApplication">
+    <configuration name="SystemMonitorUtil" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.xu.monitorcommon.utils.SystemMonitorUtil" />
+      <module name="monitor-common" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.xu.monitorcommon.utils.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MonitorClientApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="monitor-client" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.xu.monitorclient.MonitorClientApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MonitorCommonApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="monitor-common" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.xu.monitorcommon.MonitorCommonApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MonitorProjectApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="monitor-project" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.xu.monitorproject.MonitorProjectApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MonitorServerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="monitor-server" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.xu.monitorserver.MonitorServerApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MonitorWebApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="monitor-web" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.xu.monitorweb.MonitorWebApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.SystemMonitorUtil" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-18abd8497189-intellij.indexing.shared.core-IU-241.14494.240" />
+        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-IU-241.14494.240" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="357c39f9-f2bb-4404-af31-bd1fa999a38e" name="Changes" comment="" />
+      <created>1764057241780</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764057241780</updated>
+      <workItem from="1764057242865" duration="2552000" />
+      <workItem from="1764059814809" duration="1660000" />
+      <workItem from="1764061494231" duration="235000" />
+      <workItem from="1764061879376" duration="56000" />
+      <workItem from="1764062197332" duration="2375000" />
+      <workItem from="1764206340074" duration="6336000" />
+      <workItem from="1764213794135" duration="2040000" />
+      <workItem from="1764228795426" duration="1253000" />
+      <workItem from="1764237057162" duration="574000" />
+      <workItem from="1764293134723" duration="6677000" />
+      <workItem from="1764301580977" duration="2436000" />
+      <workItem from="1764317070771" duration="15000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+</project>

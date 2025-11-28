@@ -55,6 +55,19 @@
             <artifactId>influxdb-client-java</artifactId>
             <version>6.10.0</version>
         </dependency>
+
+        <!--   WebSocket支持     -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+            <version>3.3.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.mwiede</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.2.11</version>
+        </dependency>
     </dependencies>
 
     <build>

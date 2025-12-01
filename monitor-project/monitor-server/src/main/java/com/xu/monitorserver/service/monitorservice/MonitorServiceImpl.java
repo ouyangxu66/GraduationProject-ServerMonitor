@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service // <--- 这个注解要加在实现类上，而不是接口上
+@Service
 public class MonitorServiceImpl implements MonitorService {
 
     @Autowired

@@ -1,7 +1,7 @@
 package com.xu.monitorserver.handler;
 
 
-import com.xu.monitorserver.service.SshService.SshService;
+import com.xu.monitorserver.service.sshservice.SshService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
@@ -61,12 +61,21 @@ public class WebSshWebSocketHandler implements WebSocketHandler {
         sshService.close(session);
     }
 
+    /**
+     * 错误时触发
+     * @param session
+     * @param exception
+     * @throws Exception
+     */
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         sshService.close(session);
     }
 
-    @Override
+    /**
+     * 判断是否支持 partial messages
+     * @return
+     */
     public boolean supportsPartialMessages() {
         return false;
     }

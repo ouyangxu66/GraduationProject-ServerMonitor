@@ -1,4 +1,4 @@
-package com.xu.monitorserver.service.SshService;
+package com.xu.monitorserver.service.sshservice;
 
 import org.springframework.web.socket.WebSocketSession;
 

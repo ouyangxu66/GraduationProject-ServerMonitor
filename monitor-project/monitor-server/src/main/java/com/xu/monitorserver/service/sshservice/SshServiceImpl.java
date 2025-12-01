@@ -1,4 +1,4 @@
-package com.xu.monitorserver.service.SshService;
+package com.xu.monitorserver.service.sshservice;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelShell;
@@ -33,20 +33,25 @@ public class SshServiceImpl implements SshService {
 
     @Override
     public void initConnection(WebSocketSession session, String ip, int port, String username, String password) {
+        //创建 JSch 对象,用于创建 SSH Session
         JSch jSch = new JSch();
+        //创建 SSH 连接对象,用来保存 SSH 连接对象
         SshConnection sshConnection = new SshConnection();
 
         try {
             // 1. 建立 SSH Session
             Session sshSession = jSch.getSession(username, ip, port);
             sshSession.setPassword(password);
+
+            //设置SSH连接属性，禁用严格的主机密钥检查
             Properties config = new Properties();
-            config.put("StrictHostKeyChecking", "no"); // 不验证指纹，省事
+            config.put("StrictHostKeyChecking", "no");
             sshSession.setConfig(config);
-            sshSession.connect(3000); // 3秒超时
+            sshSession.connect(3000);
 
             // 2. 打开 Shell 通道 (像打开一个终端窗口)
             Channel channel = sshSession.openChannel("shell");
+            // 将Channel转换为特定的ChannelShell类型
             ChannelShell channelShell = (ChannelShell) channel;
             channelShell.connect(3000);
 
@@ -64,7 +69,7 @@ public class SshServiceImpl implements SshService {
                     // 循环读取 Linux 的输出
                     while ((i = inputStream.read(buffer)) != -1) {
                         String msg = new String(buffer, 0, i);
-                        // 通过 WebSocket 发回前端
+                        // 通过 WebSocket 发回前端,远程服务器响应->客户端
                         if (session.isOpen()) {
                             session.sendMessage(new TextMessage(msg));
                         }
@@ -92,7 +97,7 @@ public class SshServiceImpl implements SshService {
         SshConnection connection = sshMap.get(session.getId());
         if (connection != null) {
             try {
-                // 把前端的按键写入 SSH 的输入流
+                // 把前端的按键写入 SSH 的输入流,客户端命令->远程服务器
                 OutputStream outputStream = connection.getChannel().getOutputStream();
                 outputStream.write(command.getBytes());
                 outputStream.flush();
@@ -111,12 +116,14 @@ public class SshServiceImpl implements SshService {
         }
     }
 
-    // 内部类，用于封装 SSH 连接对象
+    // 内部类，封装 SSH 连接对象,用于后端连接服务器
     private static class SshConnection {
+        //会话,传入IP 端口 用户名
         private Session jSchSession;
+        //通道
         private ChannelShell channel;
 
-        // Getters and Setters (可以使用 Lombok @Data)
+        // Getters and Setters
         public Session getJSchSession() { return jSchSession; }
         public void setJSchSession(Session jSchSession) { this.jSchSession = jSchSession; }
         public ChannelShell getChannel() { return channel; }

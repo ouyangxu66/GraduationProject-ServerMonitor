@@ -7,8 +7,10 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
+
 @Configuration
 @EnableWebSocket
+// WebSocket 配置类,当有请求访问"/ws/ssh"时,交给WebSshWebSocketHandler来处理
 public class WebSocketConfig implements WebSocketConfigurer {
 
     @Autowired

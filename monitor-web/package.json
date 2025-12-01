@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
     "element-plus": "^2.11.8",

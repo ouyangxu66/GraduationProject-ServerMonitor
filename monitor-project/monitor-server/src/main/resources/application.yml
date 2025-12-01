@@ -10,3 +10,16 @@ influx:
   token: GCqeNNPRnEarrVZPlQVb116O43O_9if2q6FlIj-OR8SxLLkMmB3Pg2kCBtQZzeS3_2-EiWnKGbjt4LaQvIL7Cw== #InfluxDB Token
   org: my-org
   bucket: monitor_bucket
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 👇 改成你的数据库地址
+    url: jdbc:mysql://localhost:3306/monitor_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1234
+
+# MyBatis-Plus 配置 (可选，用于打印 SQL 日志，方便调试)
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

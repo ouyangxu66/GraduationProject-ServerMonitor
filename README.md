@@ -106,12 +106,58 @@ graph TD
 采用 Maven 多模块架构，职责分离，依赖清晰：
 
 ```text
-ServerMonitor(Root)
-├──monitor-project 
-|  ├── monitor-common      # [公共模块] Pojo, DTO, Utils, OSHI工具类 (所有模块依赖)
-|  ├── monitor-client      # [探针端] 部署在目标Linux服务器，采集并上报数据
-|  ├── monitor-server      # [服务端] 核心业务，InfluxDB存储，WebSocket SSH实现
-├──monitor-web         # [前端] Vue3 + Vite 工程
+GraduationProject-ServerMonitor (Root)
+├── 📂 .idea                        # IntelliJ IDEA 项目配置目录
+├── 📂 monitor-project              # [后端] Maven 父工程 (聚合管理依赖版本)
+│   ├── 📂 monitor-common           # [公共模块] 被 Client 和 Server 共同依赖
+│   │   ├── 📂 src/main/java/com/monitor/common
+│   │   │   ├── 📂 domain           # 实体类 (CPU, Mem, Jvm 等 DTO/VO)
+│   │   │   ├── 📂 utils            # 工具箱 (IpUtil, OshiUtil, DateUtil)
+│   │   │   └── 📂 service          # 公共接口定义 (IReportService)
+│   │   └── 📄 pom.xml
+│   │
+│   ├── 📂 monitor-client           # [探针端] 运行在被监控的目标服务器
+│   │   ├── 📂 src/main/java/com/monitor/client
+│   │   │   ├── 📂 config           # 配置类 (RestTemplateConfig)
+│   │   │   ├── 📂 task             # 定时任务 (CollectTask: 5秒采集一次)
+│   │   │   ├── 📂 core             # 核心采集逻辑 (HardwareGatherer)
+│   │   │   └── 📄 MonitorClientApplication.java
+│   │   ├── 📂 src/main/resources
+│   │   │   └── 📄 application.yml  # 配置: server-url, interval
+│   │   └── 📄 pom.xml
+│   │
+│   ├── 📂 monitor-server           # [服务端] 数据处理与 WebSSH 中枢
+│   │   ├── 📂 src/main/java/com/monitor/server
+│   │   │   ├── 📂 config           # 全局配置 (WebSocketConfig, InfluxDbConfig)
+│   │   │   ├── 📂 controller       # API 接口 (ReportController, AuthController)
+│   │   │   ├── 📂 handler          # WebSocket 处理器 (WebSshHandler)
+│   │   │   ├── 📂 service          # 业务逻辑 (SshService, InfluxService)
+│   │   │   │   └── 📂 impl         # 业务实现类
+│   │   │   └── 📄 MonitorServerApplication.java
+│   │   ├── 📂 src/main/resources
+│   │   │   ├── 📂 mapper           # MyBatis Mapper XML 文件
+│   │   │   └── 📄 application.yml  # 配置: MySQL, InfluxDB, Port
+│   │   └── 📄 pom.xml
+│   └── 📄 pom.xml                  # 父工程 POM (定义 dependencyManagement)
+│
+├── 📂 monitor-web                  # [前端] Vue 3 + Vite 工程
+│   ├── 📂 public                   # 静态资源 (favicon 等)
+│   ├── 📂 src
+│   │   ├── 📂 api                  # Axios 请求封装 (monitor.js, ssh.js)
+│   │   ├── 📂 assets               # 样式与图片
+│   │   ├── 📂 components           # 公共组件 (Terminal.vue, ECharts.vue)
+│   │   ├── 📂 router               # 路由配置 (index.js)
+│   │   ├── 📂 stores               # Pinia 状态管理
+│   │   ├── 📂 views                # 页面视图
+│   │   │   ├── 📂 dashboard        # 监控大屏
+│   │   │   └── 📂 ssh              # 远程终端页面
+│   │   ├── 📄 App.vue              # 根组件
+│   │   └── 📄 main.js              # 入口文件
+│   ├── 📄 index.html               # HTML 模板
+│   ├── 📄 vite.config.js           # Vite 配置 (代理转发, 别名配置)
+│   └── 📄 package.json             # NPM 依赖管理
+│
+└── 📄 README.md                    # 项目说明文档    # [前端] Vue3 + Vite 工程
 ```
 
 ---

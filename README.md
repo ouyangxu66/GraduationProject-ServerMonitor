@@ -1,237 +1,245 @@
-# 🚀 Monitor System - 分布式服务器运维监控平台
+# 🚀 Monitor System | 分布式服务器运维监控平台
 
-![Java](https://img.shields.io/badge/Java-JDK17-red) ![SpringBoot](https://img.shields.io/badge/SpringBoot-3.3.x-green) ![Vue](https://img.shields.io/badge/Vue-3.x-42b883) ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.x-blue)
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-JDK17-b07219?style=flat-square&logo=openjdk" alt="Java">
+  <img src="https://img.shields.io/badge/SpringBoot-3.3.x-6db33f?style=flat-square&logo=springboot" alt="SpringBoot">
+  <img src="https://img.shields.io/badge/Vue.js-3.x-4fc08d?style=flat-square&logo=vue.js" alt="Vue">
+  <img src="https://img.shields.io/badge/InfluxDB-2.7-22adf6?style=flat-square&logo=influxdb" alt="InfluxDB">
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License">
+</p>
 
-**Monitor System** 是一个轻量级、高性能的分布式服务器监控与运维平台。它采用标准的 Client-Server 架构，集成了服务器硬件状态实时监控、历史趋势分析以及 Web 端远程 SSH 控制功能，旨在为开发者提供一个开箱即用的运维解决方案。
+> **Monitor System** 是一个基于 **Spring Boot 3** 和 **Vue 3** 的全栈分布式运维平台。它集成了 **OSHI** 硬件采集、**InfluxDB** 时序存储以及基于 **WebSocket + JSch** 的 Web SSH 终端，旨在为开发者提供一个开箱即用的轻量级运维解决方案。
 
 ---
 
-## 📚 目录 (Table of Contents)
+## 🖼️ 界面预览 (Preview)
 
-- [核心特性](#-核心特性-features)
-- [技术栈](#-技术栈-tech-stack)
-- [系统架构](#-系统架构-architecture)
-- [核心流程图](#-核心流程-processes)
-- [项目结构](#-项目结构-project-structure)
-- [快速开始](#-快速开始-getting-started)
-- [后续规划](#-后续规划-roadmap)
+| 📊 实时监控仪表盘 | 💻 Web SSH 远程终端 |
+| :---: | :---: |
+| *(在此处放置 Dashboard 截图)*<br>CPU/内存实时折线图 | *(在此处放置 WebSSH 截图)*<br>基于 Xterm.js 的全功能终端 |
 
 ---
 
 ## ✨ 核心特性 (Features)
 
-1.  **实时硬件监控**：
-    *   基于 **OSHI** 深入操作系统底层，精准采集 CPU 利用率、内存使用情况、JVM 状态等核心指标。
-    *   支持多台服务器（Client）同时上报，毫秒级数据刷新。
+### 1. 🖥️ 深度硬件监控
+*   **多维度采集**：基于 **OSHI (v6.x)** 深入底层，精准采集 CPU (System/User/Wait)、内存 (Used/Free/Swap)、JVM 堆内存等核心指标。
+*   **分布式探针**：轻量级 Client 端设计，支持多台服务器同时上报，毫秒级数据刷新。
 
-2.  **高性能时序存储**：
-    *   引入 **InfluxDB 2.x** 处理高并发监控数据写入。
-    *   利用时序数据库特性实现数据的自动过期（Retention Policy）和降采样聚合查询，避免随着时间推移导致查询变慢。
+### 2. 💾 高性能时序存储
+*   **InfluxDB 2.x 驱动**：摒弃传统关系型数据库存储监控数据的方案，采用时序数据库处理高并发写入。
+*   **数据降采样**：利用 Flux 查询语言实现数据的自动聚合（Aggregate Window），轻松应对海量历史数据查询。
 
-3.  **可视化仪表盘**：
-    *   基于 **Vue 3 + ECharts** 构建现代化 SPA 页面。
-    *   提供动态折线图展示 CPU/内存 历史趋势，支持时间范围筛选。
-
-4.  **Web SSH 远程终端**：
-    *   **“Web 版 Xshell”**：无需安装任何客户端，直接在浏览器中管理 Linux 服务器。
-    *   基于 **WebSocket + JSch** 实现全双工低延迟通信，支持标准的 Shell 交互命令。
-
-5.  **分布式架构**：
-    *   **Monitor-Client (探针)**：轻量级设计，部署在目标服务器，负责采集与上报。
-    *   **Monitor-Server (中枢)**：负责数据接收、存储、鉴权及 SSH 流量转发。
+### 3. 🔌 Web SSH 终端 (亮点)
+*   **浏览器即终端**：集成 **Xterm.js** + **xterm-addon-fit**，提供接近原生 Shell 的操作体验。
+*   **全双工通信**：后端使用 **JSch** 建立 SSH 连接，通过 **WebSocket** 实现标准输入输出流（StdIn/StdOut）的实时透传。
+*   **自适应布局**：支持窗口大小自动调整 (Resize)，完美适配 `vi/vim`、`top`、`htop` 等全屏应用。
 
 ---
 
-## 🛠 技术栈 (Tech Stack)
+## 🛠 技术架构 (Architecture)
 
-### 后端 (Backend)
-| 技术 | 说明 | 作用 |
+### 技术选型
+
+| 领域 | 技术栈 | 版本及说明 |
 | :--- | :--- | :--- |
-| **Spring Boot 3.3** | 核心框架 | 提供 IOC 容器、自动配置与 Web 服务能力 |
-| **OSHI** | 硬件采集库 | 跨平台读取操作系统硬件信息 (CPU/Memory/Disk) |
-| **InfluxDB Client** | 时序数据库 SDK | 连接 InfluxDB 2.x，处理监控数据的读写 |
-| **MyBatis-Plus** | ORM 框架 | 简化 MySQL 操作，管理服务器基础信息 (CRUD) |
-| **JSch** | SSH 协议库 | Java 实现的 SSH2 客户端，用于建立远程连接 |
-| **Spring WebSocket** | 实时通信 | 实现 Web SSH 的前后端全双工通信 |
+| **后端框架** | Spring Boot | `3.3.5` (严格锁定版本，确保稳定性) |
+| **前端框架** | Vue 3 + Vite | 配合 Element Plus 与 ECharts 5 |
+| **硬件采集** | OSHI | `6.4.x` 跨平台硬件信息库 |
+| **SSH 核心** | JSch | `0.1.55` Java SSH2 实现 |
+| **实时通讯** | WebSocket | Spring Boot Starter WebSocket |
+| **数据存储** | InfluxDB | `v2.7` 时序数据存储 |
+| **构建工具** | Maven | 多模块 (Multi-module) 构建 |
 
-### 前端 (Frontend)
-| 技术 | 说明 | 作用 |
-| :--- | :--- | :--- |
-| **Vue 3** | 前端框架 | Composition API 构建响应式用户界面 |
-| **Vite** | 构建工具 | 极速冷启动与热更新 |
-| **Element Plus** | UI 组件库 | 统一的界面风格与交互组件 |
-| **ECharts** | 图表库 | 渲染高性能的动态折线图 |
-| **Xterm.js** | 终端组件 | 在浏览器中模拟 Linux 终端界面 |
-
-### 数据存储 (Database)
-*   **MySQL 8.0**: 存储服务器列表、用户信息、告警规则等结构化数据。
-*   **InfluxDB 2.7**: 存储 CPU、内存等带有时间戳的高频监控数据。
-
----
-
-## 🏗 系统架构 (Architecture)
-
-本系统采用经典的分层架构设计，前后端分离，数据流向清晰。
+### 架构图
 
 ```mermaid
 graph TD
-    %% 定义样式
-    classDef client fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef server fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
-    classDef db fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    classDef web fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    %% 样式定义
+    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef server fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+    classDef storage fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
 
-    subgraph User_Layer [用户交互层]
-        Web[💻 Monitor-Web (Vue3 + Xterm.js)]:::web
+    subgraph ClientSide ["☁️ 被监控节点 (Monitor-Client)"]
+        direction TB
+        Agent["🤖 采集探针 (Agent)"]:::client
+        OSHI["📊 OSHI SDK"]:::client
+        Agent --> OSHI
     end
 
-    subgraph Server_Layer [业务逻辑层]
-        Gateway[🛡️ Controller / API]:::server
-        SSH_Handler[🔌 WebSocket SSH Handler]:::server
-        Monitor_Service[📊 Monitor Service]:::server
-        SSH_Service[🔧 JSch Service]:::server
-    end
-
-    subgraph Storage_Layer [数据存储层]
-        MySQL[(MySQL\n基础信息)]:::db
-        InfluxDB[(InfluxDB\n时序监控数据)]:::db
-    end
-
-    subgraph Agent_Layer [被监控节点]
-        Agent1[🤖 Monitor-Client 1]:::client
-        Agent2[🤖 Monitor-Client 2]:::client
-    end
-
-    %% 关系连线
-    Web -- "HTTP (查询数据/管理服务器)" --> Gateway
-    Web -- "WebSocket (SSH操作)" --> SSH_Handler
-    
-    Gateway --> Monitor_Service
-    Monitor_Service -- "读写历史数据" --> InfluxDB
-    Monitor_Service -- "CRUD" --> MySQL
-    
-    SSH_Handler --> SSH_Service
-    SSH_Service -- "SSH 协议 (TCP 22)" --> Agent1
-    
-    Agent1 -- "HTTP POST (定时上报)" --> Gateway
-```
-
----
-
-## 🔄 核心流程 (Processes)
-
-### 1. 监控数据上报与查询流程
-Client 端定时采集，Server 端接收并存入时序数据库，Web 端按需查询降采样数据。
-
-```mermaid
-sequenceDiagram
-    participant Client as 🤖 Client (Agent)
-    participant Server as ⚙️ Server
-    participant Influx as 🟢 InfluxDB
-    participant Web as 💻 Web
-
-    Note over Client: 定时任务 (每5秒)
-    Client->>Client: OSHI 采集 CPU/内存
-    Client->>Server: POST /monitor/report (Data)
-    Server->>Influx: Write Point (Measurement: server_status)
-    
-    Note over Web: 用户查看仪表盘
-    Web->>Server: GET /monitor/cpu-history
-    Server->>Influx: Flux 查询 (aggregateWindow mean)
-    Influx-->>Server: 返回聚合后的历史数据
-    Server-->>Web: JSON List
-    Web->>Web: ECharts 渲染折线图
-```
-
-### 2. Web SSH 远程控制流程
-利用 WebSocket 实现浏览器与 Linux 底层 Shell 的全双工透传。
-
-```mermaid
-sequenceDiagram
-    participant User as 👨‍💻 用户 (Xterm.js)
-    participant Server as ⚙️ Server (WebSocket+JSch)
-    participant Linux as 🐧 目标服务器
-
-    User->>Server: 1. WS Connect (携带 IP/User/Pwd)
-    Server->>Linux: 2. JSch Session.connect()
-    Server->>Linux: 3. Open Channel "shell"
-    
-    loop 全双工实时交互
-        User->>Server: 发送字符 'l'
-        Server->>Linux: OutputStream.write('l')
-        Linux-->>Server: 回显字符 'l'
-        Server-->>User: WS Send 'l'
-        User->>User: 终端显示 'l'
+    subgraph ServerSide ["⚙️ 管理中枢 (Monitor-Server)"]
+        direction TB
+        API["Gateway / API"]:::server
+        WSS["🔌 WebSocket Handler"]:::server
+        SSH_Svc["🔧 SSH Service (JSch)"]:::server
+        Report_Svc["📈 Report Service"]:::server
         
-        User->>Server: 发送字符 's' + Enter
-        Server->>Linux: write('s\n')
-        Linux-->>Server: 返回命令结果 (file1, file2...)
-        Server-->>User: WS Send 结果
-        User->>User: 终端渲染结果
+        WSS <--> SSH_Svc
+        API --> Report_Svc
     end
+
+    subgraph UserSide ["💻 用户终端 (Browser)"]
+        VueApp["Vue3 Web App"]
+        Xterm["🖥️ Xterm.js 终端"]
+        VueApp --包含--> Xterm
+    end
+
+    subgraph DB ["💾 数据存储层"]
+        Influx[("🌊 InfluxDB 2.x\n(时序数据)")]:::storage
+        MySQL[("🐬 MySQL 8.0\n(元数据)")]:::storage
+    end
+
+    %% 核心链路
+    Agent -- "HTTP POST (定时上报)" --> API
+    Report_Svc -- "Write Points" --> Influx
+    Report_Svc -- "CRUD" --> MySQL
+
+    %% SSH 链路
+    Xterm -- "WebSocket Stream" --> WSS
+    SSH_Svc <== "TCP :22 (SSH Protocol)" ==> Agent
 ```
 
 ---
 
-## 📂 项目结构 (Project Structure)
+## 📂 项目结构 (Structure)
+
+采用 Maven 多模块架构，职责分离，依赖清晰：
 
 ```text
-monitor-project
-├── monitor-common          # [公共模块] DTO对象、OSHI采集工具类
-├── monitor-client          # [探针端] 运行在被监控服务器，定时采集上报
-├── monitor-server          # [服务端] 核心API、InfluxDB存储、SSH逻辑
-└── monitor-web             # [前端] Vue3 工程，包含 Dashboard 和 SSH 终端
+GraduationProject-ServerMonitor (Root)
+├── 📂 .idea                        # IntelliJ IDEA 项目配置目录
+├── 📂 monitor-project              # [后端] Maven 父工程 (聚合管理依赖版本)
+│   ├── 📂 monitor-common           # [公共模块] 被 Client 和 Server 共同依赖
+│   │   ├── 📂 src/main/java/com/monitor/common
+│   │   │   ├── 📂 domain           # 实体类 (CPU, Mem, Jvm 等 DTO/VO)
+│   │   │   ├── 📂 utils            # 工具箱 (IpUtil, OshiUtil, DateUtil)
+│   │   │   └── 📂 service          # 公共接口定义 (IReportService)
+│   │   └── 📄 pom.xml
+│   │
+│   ├── 📂 monitor-client           # [探针端] 运行在被监控的目标服务器
+│   │   ├── 📂 src/main/java/com/monitor/client
+│   │   │   ├── 📂 config           # 配置类 (RestTemplateConfig)
+│   │   │   ├── 📂 task             # 定时任务 (CollectTask: 5秒采集一次)
+│   │   │   ├── 📂 core             # 核心采集逻辑 (HardwareGatherer)
+│   │   │   └── 📄 MonitorClientApplication.java
+│   │   ├── 📂 src/main/resources
+│   │   │   └── 📄 application.yml  # 配置: server-url, interval
+│   │   └── 📄 pom.xml
+│   │
+│   ├── 📂 monitor-server           # [服务端] 数据处理与 WebSSH 中枢
+│   │   ├── 📂 src/main/java/com/monitor/server
+│   │   │   ├── 📂 config           # 全局配置 (WebSocketConfig, InfluxDbConfig)
+│   │   │   ├── 📂 controller       # API 接口 (ReportController, AuthController)
+│   │   │   ├── 📂 handler          # WebSocket 处理器 (WebSshHandler)
+│   │   │   ├── 📂 service          # 业务逻辑 (SshService, InfluxService)
+│   │   │   │   └── 📂 impl         # 业务实现类
+│   │   │   └── 📄 MonitorServerApplication.java
+│   │   ├── 📂 src/main/resources
+│   │   │   ├── 📂 mapper           # MyBatis Mapper XML 文件
+│   │   │   └── 📄 application.yml  # 配置: MySQL, InfluxDB, Port
+│   │   └── 📄 pom.xml
+│   └── 📄 pom.xml                  # 父工程 POM (定义 dependencyManagement)
+│
+├── 📂 monitor-web                  # [前端] Vue 3 + Vite 工程
+│   ├── 📂 public                   # 静态资源 (favicon 等)
+│   ├── 📂 src
+│   │   ├── 📂 api                  # Axios 请求封装 (monitor.js, ssh.js)
+│   │   ├── 📂 assets               # 样式与图片
+│   │   ├── 📂 components           # 公共组件 (Terminal.vue, ECharts.vue)
+│   │   ├── 📂 router               # 路由配置 (index.js)
+│   │   ├── 📂 stores               # Pinia 状态管理
+│   │   ├── 📂 views                # 页面视图
+│   │   │   ├── 📂 dashboard        # 监控大屏
+│   │   │   └── 📂 ssh              # 远程终端页面
+│   │   ├── 📄 App.vue              # 根组件
+│   │   └── 📄 main.js              # 入口文件
+│   ├── 📄 index.html               # HTML 模板
+│   ├── 📄 vite.config.js           # Vite 配置 (代理转发, 别名配置)
+│   └── 📄 package.json             # NPM 依赖管理
+│
+└── 📄 README.md                    # 项目说明文档    # [前端] Vue3 + Vite 工程
 ```
 
 ---
 
 ## 🚀 快速开始 (Getting Started)
 
-### 前置要求
-*   **JDK**: 17+
-*   **Node.js**: 18+ (推荐 v20.x)
-*   **MySQL**: 8.0+
-*   **InfluxDB**: 2.7.x (请勿使用 1.x 或 3.x)
-
 ### 1. 环境准备
-1.  **MySQL**: 创建数据库 `monitor_db`，导入 `server_info` 建表语句。
-2.  **InfluxDB**: 启动服务，创建 Bucket 名为 `monitor_bucket`，并获取 Token。
+*   **JDK**: 17+
+*   **Node.js**: 16+
+*   **InfluxDB 2.x**: 必须安装 2.x 版本 (不兼容 1.x)。
+    *   启动后访问 `localhost:8086`，创建初始账号。
+    *   创建 Bucket: `monitor_bucket`
+    *   创建 Organization: `my_org`
+    *   **获取 Token**: 记录下 `API Token`。
 
-### 2. 后端配置 (monitor-server)
-修改 `monitor-server/src/main/resources/application.yml`:
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/monitor_db...
-    username: root
-    password: your_password
-
-influx:
-  url: http://localhost:8086
-  token: your_influx_token
-  bucket: monitor_bucket
-  org: your_org
-```
-
-### 3. 启动服务
-1.  启动 `MonitorServerApplication` (端口 8080)。
-2.  配置 `monitor-client` 的 `application.yml` 指向服务端地址，启动 `MonitorClientApplication` (端口 8081)。
-3.  进入 `monitor-web` 目录：
+### 2. 后端构建与配置
+1.  **克隆项目**：
     ```bash
-    npm install
-    npm run dev
+    git clone https://github.com/your-repo/monitor-system.git
     ```
-4.  访问 `http://localhost:5173`。
+2.  **编译公共依赖** (重要)：
+    在根目录下运行 Maven 命令，安装 `monitor-common` 到本地仓库。
+    ```bash
+    mvn clean install
+    ```
+3.  **配置 Server 端**：
+    修改 `monitor-server/src/main/resources/application.yml`：
+    <details>
+    <summary>📄 点击展开查看配置示例</summary>
+
+    ```yaml
+    server:
+      port: 8080
+
+    spring:
+      datasource:
+        url: jdbc:mysql://localhost:3306/monitor_db
+        username: root
+        password: password
+    
+    # InfluxDB 配置 (关键)
+    influx:
+      url: http://localhost:8086
+      token: YOUR_INFLUX_TOKEN_HERE
+      bucket: monitor_bucket
+      org: my_org
+    ```
+    </details>
+
+4.  **启动 Server**：运行 `MonitorServerApplication`。
+
+### 3. 探针端 (Client) 启动
+修改 `monitor-client/src/main/resources/application.yml`，将 `server-url` 指向你的 Server 地址。然后启动 `MonitorClientApplication`。
+
+### 4. 前端启动
+```bash
+cd monitor-web
+npm install
+npm run dev
+```
+访问 `http://localhost:5173`，即可看到监控大屏。
 
 ---
 
-## 🔮 后续规划 (Roadmap)
+## 🔮 路线图 (Roadmap)
 
-- [ ] **安全加固**: 集成 Spring Security + JWT 实现用户登录与权限控制。
-- [ ] **告警系统**: 基于 CPU/内存阈值（如 >90%）发送邮件或钉钉告警。
-- [ ] **Docker 支持**: 编写 Dockerfile 和 docker-compose.yml 实现一键部署。
-- [ ] **多服务器适配**: 优化 Client 注册逻辑，支持动态添加监控节点。
+我们正在积极开发以下功能：
+
+- [x] **基础监控**: CPU、内存数据采集与时序存储
+- [x] **Web SSH**: 基于 WebSocket 的远程终端
+- [x] **前端展示**：基于Vue3的前端页面展示和交互
+- [ ] **告警中心**: 自定义阈值（如 CPU > 90%），支持邮件/钉钉/飞书通知
+- [ ] **文件管理**: 类似 SFTP 的远程文件上传/下载功能
+- [ ] **Docker 部署**: 提供 docker-compose 一键拉起所有服务
+- [ ] **安全加固**: 基于 Spring Security + JWT 的用户鉴权体系
 
 ---
 
-**License**: MIT
+## 🤝 贡献 (Contribution)
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 开源协议 (License)
+
+[MIT License](LICENSE) © 2024 ouyangxu66@github.com

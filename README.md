@@ -222,27 +222,13 @@ npm run dev
 
 ---
 
-## 📝 常见问题 (FAQ)
-
-**Q1: InfluxDB 报错 "bucket not found"？**
-> 请确保 `application.yml` 中的 `bucket` 名称与 InfluxDB 控制台中创建的完全一致（区分大小写）。
-
-**Q2: Web SSH 连接失败？**
-> 1. 检查目标服务器防火墙是否开放 22 端口。
-> 2. 检查后端日志，如果是 `Auth fail`，请确认账号密码正确。
-> 3. 确保前端 WebSocket 地址正确指向了 `ws://localhost:8080/ws/ssh`。
-
-**Q3: Client 端 Maven 依赖报错？**
-> `monitor-client` 依赖 `monitor-common`。请务必先在父工程下执行 `mvn install`，确保 common 模块已打入本地 Maven 仓库。
-
----
-
 ## 🔮 路线图 (Roadmap)
 
 我们正在积极开发以下功能：
 
 - [x] **基础监控**: CPU、内存数据采集与时序存储
 - [x] **Web SSH**: 基于 WebSocket 的远程终端
+- [x] **前端展示**：基于Vue3的前端页面展示和交互
 - [ ] **告警中心**: 自定义阈值（如 CPU > 90%），支持邮件/钉钉/飞书通知
 - [ ] **文件管理**: 类似 SFTP 的远程文件上传/下载功能
 - [ ] **Docker 部署**: 提供 docker-compose 一键拉起所有服务

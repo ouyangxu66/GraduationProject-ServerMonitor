@@ -1,13 +1,12 @@
----
-
-### 📄 SECURITY.md (修复版)
-
-```markdown
 # 🔐 Monitor System | 安全鉴权体系架构文档
 
-> **版本**: 1.0
-> **技术栈**: Spring Boot 3.3 + Spring Security 6 + JWT + WebSocket
-> **架构模式**: RBAC (基于角色的访问控制) / Stateless (无状态认证)
+| 属性 | 说明 |
+| :--- | :--- |
+| **版本** | 1.0 |
+| **技术栈** | Spring Boot 3.3 + Spring Security 6 + JWT + WebSocket |
+| **架构模式** | RBAC / Stateless |
+
+
 
 ---
 
@@ -181,4 +180,3 @@ monitor-server/src/main/java/com/monitor/server
 1.  **RefreshToken 机制**：当前 Token 过期需重新登录。可引入双 Token 机制（Access + Refresh），在无感的情况下刷新 Token。
 2.  **动态权限控制**：目前是基于代码注解的权限控制。可引入 RBAC 权限表（`sys_menu`, `sys_role_menu`），实现菜单级别的动态权限分配。
 3.  **多端登录管理**：在 Redis 中存储 Token 白名单，实现“踢人下线”或“单点登录”功能。
-```

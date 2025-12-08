@@ -16,7 +16,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 // 👇 修改点 2：引入 useRouter
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
-import { getCpuHistory } from '@/api/monitor'
+import { getCpuHistory } from '@/api/monitor.js'
 
 // 👇 修改点 3：初始化路由实例
 const router = useRouter()
@@ -30,7 +30,6 @@ const goToSsh = () => {
   router.push('/ssh')
 }
 
-// ... 下面的代码保持不变 ...
 const initChart = (data) => {
   const xData = data.map(item => item.time.substring(11, 19))
   const yData = data.map(item => item.value)

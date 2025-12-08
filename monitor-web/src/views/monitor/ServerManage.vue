@@ -57,7 +57,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { getServerList, saveServer, deleteServer } from '@/api/monitor'
+import { getServerList, saveServer, deleteServer } from '@/api/monitor.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()

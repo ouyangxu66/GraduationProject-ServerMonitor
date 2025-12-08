@@ -3,6 +3,8 @@ package com.xu.monitorserver.service.sysuserservice;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,18 +12,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xu.monitorserver.entity.SysUser;
 import com.xu.monitorserver.mapper.SysUserMapper;
 import org.springframework.security.core.userdetails.User;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * 用户详情服务实现类
  * 实现Spring Security的UserDetailsService接口，用于加载用户特定数据
  */
 public class UserDetailServiceImpl implements UserDetailsService {
-    /**
-     * 日志记录器实例
-     */
-    private static final Logger logger= LoggerFactory.getLogger(UserDetailServiceImpl.class);
-    
     /**
      * 系统用户Mapper，用于访问数据库中的用户信息
      */
@@ -45,17 +45,24 @@ public class UserDetailServiceImpl implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // 使用QueryWrapper查询指定用户名的系统用户
+        //1.使用QueryWrapper查询指定用户名的系统用户
         SysUser sysUser = sysUserMapper.selectOne(
                 new QueryWrapper<SysUser>().eq("username", username));
         // 检查用户是否存在
         if (sysUser == null){
-            // 记录用户不存在的错误日志
-            logger.error("用户不存在:{}", username);
             // 抛出用户名未找到异常
             throw new UsernameNotFoundException("用户不存在:"+username);
         }
+        //2.解析用户角色和权限
+        List<GrantedAuthority> authorities=new ArrayList<>();
+        if (sysUser.getRole() != null && !sysUser.getRole().isEmpty()){
+            authorities.add(new SimpleGrantedAuthority(sysUser.getRole()));
+        }
         // 返回包含用户名、密码和权限列表的UserDetails实现
-        return new User(sysUser.getUsername(),sysUser.getPassword(), Collections.emptyList());
+        return new User(
+                sysUser.getUsername(),
+                sysUser.getPassword(),
+                authorities
+        );
     }
 }

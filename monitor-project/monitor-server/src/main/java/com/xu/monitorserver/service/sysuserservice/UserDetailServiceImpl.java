@@ -1,20 +1,15 @@
 package com.xu.monitorserver.service.sysuserservice;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xu.monitorserver.entity.SysUser;
 import com.xu.monitorserver.mapper.SysUserMapper;
 import org.springframework.security.core.userdetails.User;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,7 +24,6 @@ public class UserDetailServiceImpl implements UserDetailsService {
     
     /**
      * 构造函数注入SysUserMapper依赖
-     * 
      * @param sysUserMapper 系统用户数据访问对象
      */
     public UserDetailServiceImpl(SysUserMapper sysUserMapper){
@@ -38,7 +32,6 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     /**
      * 根据用户名加载用户详细信息
-     * 
      * @param username 需要查找的用户名
      * @return UserDetails对象，包含用户的认证和授权信息
      * @throws UsernameNotFoundException 当用户不存在时抛出此异常
@@ -58,7 +51,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
         if (sysUser.getRole() != null && !sysUser.getRole().isEmpty()){
             authorities.add(new SimpleGrantedAuthority(sysUser.getRole()));
         }
-        // 返回包含用户名、密码和权限列表的UserDetails实现
+        //3.返回Spring Security 标准的User 对象
+        //User其实是UserDetails接口的一个具体实现类
         return new User(
                 sysUser.getUsername(),
                 sysUser.getPassword(),

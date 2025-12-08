@@ -4,8 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -19,11 +18,13 @@ import java.util.Map;
  */
 @Component
 public class JwtUtils {
+    
     /**
-     * 密钥字符串，用于生成JWT签名密钥
+     * 从配置文件获取密钥字符串，用于生成JWT签名密钥
      * 需要足够长且复杂以确保安全性
      */
-    private static final String SECRET="MonitorSystemSecurityKeyMustBeVeryLongAndComplex2024!";
+    @Value("${jwt.secret}")
+    private String SECRET;
 
     /**
      * Token过期时间设置为24小时（毫秒）
@@ -36,7 +37,9 @@ public class JwtUtils {
      * 使用预定义的密钥生成HMAC SHA密钥对象
      * 该密钥将用于JWT的签名和验证过程
      */
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    private Key getKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes());
+    }
 
     /**
      * 根据用户名生成JWT访问令牌
@@ -68,7 +71,7 @@ public class JwtUtils {
                 // 设置过期时间（当前时间+有效期）
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 // 使用指定密钥和算法进行签名
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 // 构建JWT并压缩为字符串
                 .compact();
     }
@@ -103,7 +106,7 @@ public class JwtUtils {
      */
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

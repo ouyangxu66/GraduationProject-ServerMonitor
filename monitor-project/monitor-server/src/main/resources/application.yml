@@ -23,3 +23,6 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+jwt:
+  secret: MonitorSystemSecurityKeyMustBeVeryLongAndComplex2024!

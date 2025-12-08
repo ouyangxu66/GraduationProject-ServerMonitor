@@ -34,7 +34,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     /**
      * 用户详情服务，用于加载用户信息
      */
-    private UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
     
     /**
      * JWT工具类实例，用于处理JWT令牌的生成和验证
@@ -79,14 +79,14 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 username=jwtUtils.extractUsername(jwt);
             } catch (Exception e) {
                 // 记录JWT解析失败的日志
-                logger.warn("JWT解析失败:{}",e.getMessage());
+                logger.warn("JWT解析Username失败:{}",e.getMessage());
             }
         }
 
         //2.校验Token并设置SecurityContext
         // 如果用户名存在且当前上下文中没有认证信息
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
-            // 加载用户详细信息
+            // 加载用户详细信息,再次确认用户是否存在
             UserDetails userDetails =this.userDetailsService.loadUserByUsername(username);
             // 验证JWT令牌有效性
             if (jwtUtils.validateToken(jwt,userDetails.getUsername())){

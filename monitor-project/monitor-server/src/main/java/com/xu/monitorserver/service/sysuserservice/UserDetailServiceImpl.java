@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.xu.monitorserver.entity.SysUser;
 import com.xu.monitorserver.mapper.SysUserMapper;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
  * 用户详情服务实现类
  * 实现Spring Security的UserDetailsService接口，用于加载用户特定数据
  */
+@Service
 public class UserDetailServiceImpl implements UserDetailsService {
     /**
      * 系统用户Mapper，用于访问数据库中的用户信息

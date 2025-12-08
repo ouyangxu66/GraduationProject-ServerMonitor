@@ -5,6 +5,8 @@ import com.xu.monitorcommon.result.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException; // 如果引入了 Security
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -18,7 +20,7 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * 1. 处理自定义业务异常
+     * 处理自定义业务异常
      * 场景：我们在 Service 中主动抛出的 throw new ServiceException("用户名已存在");
      */
     @ExceptionHandler(ServiceException.class)
@@ -28,7 +30,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 2. 处理 Spring Security 权限不足异常
+     * 处理 Spring Security 权限不足异常
      * 场景：普通用户访问管理员接口
      */
     @ExceptionHandler(AccessDeniedException.class)
@@ -38,17 +40,27 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 3. 处理 Spring Security 认证失败异常
-     * 场景：Token 无效或过期
+     * 处理 Spring Security 认证异常
+     * 场景：用户名或密码错误
      */
-    @ExceptionHandler(AuthenticationException.class)
-    public R<Void> handleAuthenticationException(AuthenticationException e) {
-        logger.warn("认证失败: {}", e.getMessage());
-        return R.fail(401, "认证失败，请重新登录");
+    @ExceptionHandler(BadCredentialsException.class)
+    public R<Void> handleBadCredentialsException(BadCredentialsException e) {
+        // 🔴 打印这行日志，确认是否是密码错误
+        logger.error("密码错误: {}", e.getMessage());
+        return R.fail(401, "账号或密码错误");
     }
 
     /**
-     * 4. 处理所有未知的运行时异常 (兜底策略)
+     * 处理 Spring Security 认证异常
+      * 场景：认证服务异常
+     */
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public R<Void> handleInternalAuthException(InternalAuthenticationServiceException e) {
+        logger.error("内部认证错误: {}", e.getMessage());
+        return R.fail(500, "认证服务异常");
+    }
+    /**
+     * 处理所有未知的运行时异常 (兜底策略)
      * 场景：空指针(NPE)、数组越界、数据库连接失败等不可预见的错误
      */
     @ExceptionHandler(Exception.class)

@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import './router/permission'
 
 // 👇 1. 引入 Element Plus 核心库
 import ElementPlus from 'element-plus'
@@ -13,6 +15,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 const app = createApp(App)
 
 app.use(router)
+app.use(createPinia())
 
 // 👇 4. 安装 Element Plus 插件
 app.use(ElementPlus)

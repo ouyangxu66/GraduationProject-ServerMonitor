@@ -4,23 +4,30 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  // 👇 新增 server 配置
+  // 🔴 关键：配置服务器代理
   server: {
+    port: 5173,
     proxy: {
-      // 意思：只要前端请求以 /api 开头，就自动转发给 http://localhost:8080
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8080', // 指向后端端口
         changeOrigin: true,
-        // rewrite: 把路径里的 /api 去掉，因为后端接口是 /monitor/xxx，不是 /api/monitor/xxx
-        // 如果你的后端接口就是 /monitor 开头，我们可以把 /api 替换为空，
-        // 或者我们约定前端请求写 /api/monitor/xxx -> 后端 /monitor/xxx
-        rewrite: (path) => path.replace(/^\/api/, '')
+        // 如果你的后端 Controller 就叫 /api/auth，那么不需要 rewrite
+        // 如果你的后端 Controller 叫 /auth (不带api)，则需要 rewrite: (path) => path.replace(/^\/api/, '')
+        // 按照我们的教程，后端 Controller 是带 /api 的，所以这里不需要 rewrite！
+      },
+      // WebSocket 代理 (重要！为后面的 SSH 做准备)
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true
       }
     }
   }

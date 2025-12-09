@@ -20,16 +20,26 @@ export const getCpuHistory = () => {
 // ===========================
 
 // 获取服务器列表
-export const getServerList = () => {
-    return request.get('/server/list')
+export function getServerList() {
+    return request({
+        url: '/server/list',
+        method: 'get'
+    })
 }
 
-// 新增或更新服务器
-export const saveServer = (data) => {
-    return request.post('/server/save', data)
+// 保存服务器 (新增/修改)
+export function saveServer(data) {
+    return request({
+        url: '/server/save',
+        method: 'post',
+        data
+    })
 }
 
 // 删除服务器
-export const deleteServer = (id) => {
-    return request.delete(`/server/delete?id=${id}`)
+export function deleteServer(id) {
+    return request({
+        url: `/server/${id}`, // 注意反引号
+        method: 'delete'
+    })
 }

@@ -1,35 +1,47 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '../views/monitor/Dashboard.vue'
-import SshConsole from '../views/monitor/SshConsole.vue'
-import ServerManage from "@/views/monitor/ServerManage.vue"
-import Login from '../views/login/index.vue';
+
+// 引入 Layout
+import MainLayout from '@/layout/MainLayout.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Dashboard // 首页直接指向我们写的 Dashboard
-    },
-
-    //添加 SshConsole 路由
-    {
-      path: '/ssh',
-      name: 'ssh',
-      component: SshConsole
-    },
-
-     // 添加 ServerManage 路由
-    {
-      path: '/server',
-      name: 'server',
-      component: ServerManage
-    },
-    //添加 Login 路由
+    // 1. 登录页 (顶级路由，独占全屏)
     {
       path: '/login',
       name: 'Login',
-      component: Login
+      component: () => import('@/views/login/index.vue'),
+      meta: { title: '登录' }
+    },
+    // 2. 业务页 (包裹在 Layout 中)
+    {
+      path: '/',
+      component: MainLayout, // 根路径使用 Layout 组件
+      redirect: '/dashboard',
+      children: [
+        {
+          path: 'dashboard', // 注意：子路由路径不需要加 /
+          name: 'Dashboard',
+          component: () => import('@/views/dashboard/index.vue'),
+          meta: { title: '监控大屏', requiresAuth: true }
+        },
+        {
+          path: 'ssh',
+          name: 'WebSsh',
+          component: () => import('@/views/monitor/WebSsh.vue'),
+          meta: { title: '远程终端', requiresAuth: true }
+        },
+        {
+          path: 'server',
+          name: 'Server',
+          component: () =>import('@/views/monitor/ServerManage.vue')
+        }
+      ]
+    },
+    // 404
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/dashboard'
     }
   ]
 })

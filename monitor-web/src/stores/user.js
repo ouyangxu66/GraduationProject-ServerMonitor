@@ -3,21 +3,24 @@ import { ref } from 'vue'
 import { login as loginApi } from '@/api/auth'
 
 export const useUserStore = defineStore('user', () => {
-    // 状态：优先从 localStorage 读取
     const token = ref(localStorage.getItem('token') || '')
-    const userInfo = ref({})
 
-    // 动作：登录
     const login = async (loginForm) => {
         try {
-            // 1. 调用 API
-            const data = await loginApi(loginForm) // data 就是 R.data，即 { token: '...' }
+            // data 就是 request.js 返回的 res.data
+            const data = await loginApi(loginForm)
 
-            // 2. 更新状态
-            token.value = data.token
+            // 🔍 调试：看看后端到底返回了什么？
+            console.log('>>> [登录成功] 后端返回数据:', data)
 
-            // 3. 持久化
-            localStorage.setItem('token', data.token)
+            // 假设后端返回的是 { token: "..." }
+            // 如果后端返回的是字符串，这里要改！
+            const tokenStr = data.token || data // 兼容处理
+
+            token.value = tokenStr
+            localStorage.setItem('token', tokenStr)
+
+            console.log('>>> [登录成功] 已写入 LocalStorage:', localStorage.getItem('token'))
 
             return Promise.resolve()
         } catch (error) {
@@ -25,17 +28,10 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
-    // 动作：登出
     const logout = () => {
         token.value = ''
-        userInfo.value = {}
         localStorage.removeItem('token')
     }
 
-    return {
-        token,
-        userInfo,
-        login,
-        logout
-    }
+    return { token, login, logout }
 })

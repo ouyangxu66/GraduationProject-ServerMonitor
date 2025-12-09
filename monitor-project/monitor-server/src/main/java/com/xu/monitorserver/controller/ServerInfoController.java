@@ -1,26 +1,30 @@
 package com.xu.monitorserver.controller;
 
+import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.entity.ServerInfo;
 import com.xu.monitorserver.service.serverservice.ServerInfoService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/server")
+@RequestMapping("/api/server")
 public class ServerInfoController {
 
-    @Autowired
+
     private ServerInfoService serverInfoService;
+
+    public ServerInfoController(ServerInfoService serverInfoService){
+        this.serverInfoService=serverInfoService;
+    }
 
     /**
      * 获取所有服务器列表
      * GET /server/list
      */
     @GetMapping("/list")
-    public List<ServerInfo> list() {
-        return serverInfoService.list();
+    public R<List<ServerInfo>> list() {
+        return R.ok(serverInfoService.list());
     }
 
     /**
@@ -28,11 +32,11 @@ public class ServerInfoController {
      * POST /server/save
      */
     @PostMapping("/save")
-    public String save(@RequestBody ServerInfo serverInfo) {
+    public R<String> save(@RequestBody ServerInfo serverInfo) {
         // saveOrUpdate 是 MP 提供的神器：
         // 如果传入的对象有 ID，它就执行 Update；如果没有 ID，它就执行 Insert。
         boolean success = serverInfoService.saveOrUpdate(serverInfo);
-        return success ? "success" : "fail";
+        return success ? R.ok("success") : R.fail("fail");
     }
 
     /**
@@ -40,8 +44,8 @@ public class ServerInfoController {
      * DELETE /server/delete?id=1
      */
     @DeleteMapping("/delete")
-    public String delete(@RequestParam Long id) {
+    public R<String> delete(@RequestParam Long id) {
         boolean success = serverInfoService.removeById(id);
-        return success ? "success" : "fail";
+        return success ? R.ok("success") : R.fail("fail");
     }
 }

@@ -48,9 +48,9 @@ let timer = null
 const init = async () => {
   try {
     const res = await getServerList()
-    if (res.data && res.data.length > 0) {
-      serverList.value = res.data
-      currentServerIp.value = res.data[0].ip // 默认选中第一个
+    if (res && res.length > 0) {
+      serverList.value = res
+      currentServerIp.value = res[0].ip // 默认选中第一个
       startPolling()
     } else {
       ElMessage.warning('暂无服务器，请先去添加')
@@ -67,8 +67,12 @@ const loadData = async () => {
     // 假设后端接口支持 ?ip=xxx 参数
     // 如果后端还没改，这里传参数不会报错，只是后端可能忽略
     const res = await getCpuHistory({ip: currentServerIp.value})
-    if (res.data) {
-      cpuData.value = res.data
+    if (res && Array.isArray(res)) {
+      cpuData.value = res.map(item=>({
+        ...item,
+        // 将 ISO 时间转为本地时间字符串 (例如 16:37:20)
+        time: new Date(item.time).toLocaleTimeString('zh-CN', { hour12: false })
+      }))
     }
   } catch (e) {
     console.error(e)

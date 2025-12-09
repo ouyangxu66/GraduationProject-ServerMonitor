@@ -6,7 +6,7 @@ import request from "@/utils/request.js";
 // 获取 CPU 历史数据
 export const getCpuHistory = (params) => {
     return request({
-        url: '/api/monitor/cpu-history',
+        url: '/monitor/cpu-history',
         method: 'get',
         params
     })

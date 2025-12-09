@@ -1,98 +1,90 @@
 <template>
-  <div class="ssh-container">
-    <!-- 顶部操作栏 -->
-    <el-card class="box-card" shadow="never">
-      <el-form :inline="true" :model="form" class="demo-form-inline" size="default">
-        <el-form-item label="服务器IP">
-          <el-input v-model="form.host" placeholder="192.168.x.x" style="width: 150px" />
-        </el-form-item>
-        <el-form-item label="端口">
-          <el-input v-model="form.port" placeholder="22" style="width: 80px" />
-        </el-form-item>
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="root" style="width: 100px" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" placeholder="Password" style="width: 150px" show-password />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-              type="primary"
-              :icon="Connection"
-              @click="initSsh"
-              :disabled="connected"
-              :loading="loading">
-            {{ connected ? '已连接' : '立即连接' }}
+  <div class="ssh-wrapper">
+    <!-- 状态1：未连接，显示连接表单 -->
+    <div v-if="!connected" class="connect-panel">
+      <div class="panel-content">
+        <h2 class="panel-title">建立远程连接</h2>
+        <el-form :model="form" label-width="0" class="ssh-form">
+          <el-form-item>
+            <el-input v-model="form.host" placeholder="服务器 IP 地址" size="large" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="form.port" placeholder="端口 (默认22)" size="large" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="form.username" placeholder="用户名" size="large" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="form.password" type="password" placeholder="密码" show-password size="large" />
+          </el-form-item>
+          <el-button type="primary" size="large" class="connect-btn" :loading="loading" @click="initSsh">
+            开始连接
           </el-button>
-          <el-button
-              type="danger"
-              :icon="Close"
-              @click="disconnect"
-              v-if="connected">
-            断开
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </el-form>
+      </div>
+    </div>
 
-    <!-- Xterm 终端挂载点 -->
-    <div class="terminal-wrapper">
+    <!-- 状态2：已连接，全屏显示终端 -->
+    <div v-else class="terminal-container">
+      <div class="terminal-header">
+        <span class="status-dot"></span>
+        <span>{{ form.username }}@{{ form.host }}</span>
+        <el-button type="danger" size="small" style="margin-left: auto" @click="disconnect">断开连接</el-button>
+      </div>
       <div id="xterm" class="xterm-box"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onBeforeUnmount } from 'vue'
+import { ref, reactive, onBeforeUnmount, nextTick, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
-import { Connection, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/user' // 1. 引入 UserStore
+import { useUserStore } from '@/stores/user'
+import { onActivated }  from "vue";
 
-// --- 状态定义 ---
-const userStore = useUserStore() // 2. 初始化 Store
+//显式定义组件名称，匹配 keep-alive 的 include
+defineOptions({
+  name: 'WebSsh'
+})
+const userStore = useUserStore()
+const route = useRoute()
+
 const connected = ref(false)
 const loading = ref(false)
+
+// 1. 默认不填内容 (除非从路由参数传过来)
 const form = reactive({
-  host: '192.168.1.10', // 默认值，方便调试
-  port: 22,
-  username: 'root',
-  password: ''
+  host: route.query.ip || '',
+  port: route.query.port || 22,
+  username: route.query.user || '',
+  password: route.query.pwd || ''
 })
 
 let term = null
 let socket = null
 let fitAddon = null
 
-// --- 核心连接逻辑 ---
 const initSsh = () => {
-  if (!form.host || !form.password) {
-    ElMessage.warning('请输入完整的主机信息')
+  if (!form.host || !form.username || !form.password) {
+    ElMessage.warning('请填写完整的连接信息')
     return
   }
   loading.value = true
 
-  // 1. 初始化终端界面
-  initXterm()
-
-  // 2. 建立 WebSocket 连接
-  // 🟢 关键点：从 Store 中获取 Token 并拼接到 URL 中
+  // WebSocket 连接
   const wsUrl = `ws://localhost:8080/ws/ssh?token=${userStore.token}`
   socket = new WebSocket(wsUrl)
 
-  // 3. 绑定 WebSocket 事件
   socket.onopen = () => {
-    loading.value = false
-    connected.value = true
-    term.write('\r\n\x1b[32m正在连接远程服务器...\x1b[0m\r\n')
-
-    // 发送认证数据 (连接 Linux 的账号密码)
+    // 认证
     const authData = {
       operate: 'connect',
       host: form.host,
-      port: form.port,
+      port: Number(form.port),
       username: form.username,
       password: form.password
     }
@@ -100,94 +92,155 @@ const initSsh = () => {
   }
 
   socket.onmessage = (e) => {
-    // 接收后端返回的流数据，写入终端
-    term.write(e.data)
+    // 收到消息意味着连接有反馈，切换视图
+    if (!connected.value) {
+      connected.value = true
+      loading.value = false
+      // 必须在 DOM 更新后初始化 xterm
+      nextTick(() => {
+        initXterm()
+        // 将第一条消息写入
+        term.write(e.data)
+      })
+    } else {
+      term.write(e.data)
+    }
   }
 
   socket.onclose = () => {
     connected.value = false
     loading.value = false
-    term.write('\r\n\x1b[31m连接已断开\x1b[0m\r\n')
+    if (term) term.dispose()
+    ElMessage.warning('连接已断开')
   }
 
   socket.onerror = () => {
-    connected.value = false
     loading.value = false
-    term.write('\r\n\x1b[31m连接发生错误，请检查网络或Token\x1b[0m\r\n')
+    connected.value = false
+    ElMessage.error('连接失败，请检查网络或服务器信息')
   }
 }
 
-// --- Xterm 初始化与输入监听 ---
 const initXterm = () => {
-  if (term) term.dispose()
-
   term = new Terminal({
-    fontSize: 14,
+    fontSize: 15,
     cursorBlink: true,
-    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+    fontFamily: 'Menlo, Monaco, "Courier New", monospace', // 漂亮的等宽字体
     theme: {
       background: '#1e1e1e',
-      foreground: '#ffffff'
+      foreground: '#ffffff',
     }
   })
-
   fitAddon = new FitAddon()
   term.loadAddon(fitAddon)
   term.open(document.getElementById('xterm'))
   fitAddon.fit()
 
-  // 监听终端输入 -> 发送给后端
   term.onData((data) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      // 封装为 JSON 发送 (与后端 Handler 对应)
-      const command = {
-        operate: 'command',
-        command: data
-      }
+      const command = { operate: 'command', command: data }
       socket.send(JSON.stringify(command))
     }
   })
 
-  // 窗口大小改变时自适应
   window.addEventListener('resize', fitAddon.fit)
 }
 
 const disconnect = () => {
   if (socket) socket.close()
-  if (term) term.dispose()
   connected.value = false
 }
 
+// 增加这个钩子：当页面从缓存中被激活时触发
+onActivated(() => {
+  if (fitAddon) {
+    // 重新适应终端大小，防止切回来显示错位
+    fitAddon.fit()
+    // 聚焦输入框，方便直接打字
+    term.focus()
+  }
+})
+
 onBeforeUnmount(() => {
   disconnect()
-  window.removeEventListener('resize', fitAddon ? fitAddon.fit : null)
+  if (fitAddon) window.removeEventListener('resize', fitAddon.fit)
+})
+
+// 如果路由带参数，自动尝试连接
+onMounted(() => {
+  if (form.host && form.password) {
+    initSsh()
+  }
 })
 </script>
 
 <style scoped>
-.ssh-container {
+.ssh-wrapper {
   height: 100%;
   display: flex;
-  flex-direction: column;
-  padding: 10px;
-  background-color: #f0f2f5;
+  justify-content: center;
+  align-items: center;
 }
 
-.box-card {
-  margin-bottom: 10px;
+/* 连接面板：扁平卡片 */
+.connect-panel {
+  width: 400px;
+  background: #fff;
+  border: 2px solid #ecf0f1;
+  border-radius: 16px;
+  padding: 40px;
 }
 
-.terminal-wrapper {
-  flex: 1;
+.panel-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+  font-weight: 800;
+}
+
+.connect-btn {
+  width: 100%;
+  font-weight: 700;
+  background-color: #2c3e50;
+  border-color: #2c3e50;
+}
+.connect-btn:hover {
+  background-color: #34495e;
+  border-color: #34495e;
+}
+
+/* 终端区域 */
+.terminal-container {
+  width: 100%;
+  height: 85vh; /* 占据大部分高度 */
   background-color: #1e1e1e;
-  padding: 10px;
-  border-radius: 4px;
+  border-radius: 12px;
   overflow: hidden;
-  position: relative; /* 这一步很重要，确保xterm能正确计算高度 */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* 终端可以稍微有点阴影增加沉浸感 */
+}
+
+.terminal-header {
+  height: 40px;
+  background-color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #2ecc71;
+  border-radius: 50%;
+  margin-right: 10px;
 }
 
 .xterm-box {
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  padding: 10px;
 }
 </style>

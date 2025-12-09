@@ -1,43 +1,40 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
-      <!-- 头部标题 -->
-      <div class="login-header">
-        <div class="logo-icon">🚀</div>
-        <h2>Monitor System</h2>
-        <p>分布式服务器运维监控平台</p>
+    <div class="login-wrapper">
+      <!-- 左侧/顶部：品牌区域 -->
+      <div class="brand-section">
+        <div class="logo-box">🚀</div>
+        <h1 class="sys-title">Monitor System</h1>
+        <p class="sys-desc">分布式服务器运维监控平台</p>
       </div>
 
-      <!-- 表单区域 -->
-      <el-form ref="formRef" :model="form" :rules="rules" size="large">
-        <el-form-item prop="username">
-          <el-input
-              v-model="form.username"
-              placeholder="请输入账号"
-              prefix-icon="User"
-              class="custom-input"
-          />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input
-              v-model="form.password"
-              type="password"
-              placeholder="请输入密码"
-              prefix-icon="Lock"
-              show-password
-              @keyup.enter="handleLogin"
-              class="custom-input"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="loading" class="login-btn" @click="handleLogin">
-            登 录
-          </el-button>
-        </el-form-item>
-      </el-form>
-
-      <div class="footer-text">
-        <span>© 2025 Monitor System Tech.</span>
+      <!-- 右侧/底部：表单区域 -->
+      <div class="form-section">
+        <h2 class="form-title">用户登录</h2>
+        <el-form ref="formRef" :model="form" :rules="rules" size="large" class="flat-form">
+          <el-form-item prop="username">
+            <el-input
+                v-model="form.username"
+                placeholder="请输入账号"
+                class="flat-input"
+            />
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+                v-model="form.password"
+                type="password"
+                placeholder="请输入密码"
+                show-password
+                @keyup.enter="handleLogin"
+                class="flat-input"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="loading" class="flat-btn" @click="handleLogin">
+              立即登录
+            </el-button>
+          </el-form-item>
+        </el-form>
       </div>
     </div>
   </div>
@@ -47,7 +44,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -81,108 +77,100 @@ const handleLogin = () => {
 </script>
 
 <style scoped>
-/* 1. 背景：深色渐变 */
+/* 容器：纯白背景，居中 */
 .login-container {
   height: 100vh;
   width: 100%;
-  /* 漂亮的蓝紫渐变背景 */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: #ffffff;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
-  position: relative;
+  color: #2c3e50;
 }
 
-/* 增加一些背景装饰球 (可选) */
-.login-container::before {
-  content: '';
-  position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 300px;
-  height: 300px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-}
-
-.login-container::after {
-  content: '';
-  position: absolute;
-  bottom: -50px;
-  left: -50px;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-}
-
-/* 2. 登录卡片：毛玻璃效果 */
-.login-box {
-  width: 420px;
+/* 登录框主体：无阴影，仅用边框区分 */
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 400px;
   padding: 40px;
-  background: rgba(255, 255, 255, 0.95); /* 白色背景，轻微透明 */
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  border: 2px solid #ecf0f1; /* 浅灰边框 */
+  border-radius: 24px;       /* 圆润线条 */
+  background-color: #ffffff;
+}
+
+/* 品牌区 */
+.brand-section {
   text-align: center;
+  margin-bottom: 40px;
 }
 
-.login-header {
-  margin-bottom: 30px;
-}
-
-.logo-icon {
+.logo-box {
   font-size: 48px;
   margin-bottom: 10px;
-  display: inline-block;
-  animation: float 3s ease-in-out infinite;
 }
 
-.login-header h2 {
+.sys-title {
   font-size: 28px;
-  color: #333;
-  font-weight: 700;
+  font-weight: 800; /* 加粗 */
   margin: 0;
-  background: -webkit-linear-gradient(45deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #2c3e50;
+  letter-spacing: 1px;
 }
 
-.login-header p {
-  color: #999;
-  margin-top: 10px;
-  font-size: 14px;
+.sys-desc {
+  color: #95a5a6;
+  margin-top: 8px;
+  font-weight: 500;
 }
 
-/* 按钮样式 */
-.login-btn {
+/* 表单区 */
+.form-section {
   width: 100%;
-  height: 44px;
-  font-size: 16px;
+}
+
+.form-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-left: 4px solid #3498db; /* 扁平化装饰条 */
+  padding-left: 10px;
+}
+
+/* 扁平化输入框重写 Element 样式 */
+:deep(.flat-input .el-input__wrapper) {
+  box-shadow: none !important;
+  border: 2px solid #bdc3c7;
   border-radius: 8px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background-color: #f9f9f9;
+  transition: all 0.2s;
+}
+
+:deep(.flat-input .el-input__wrapper:hover),
+:deep(.flat-input .el-input__wrapper.is-focus) {
+  border-color: #3498db; /* 聚焦时的高对比色 */
+  background-color: #fff;
+}
+
+/* 扁平化按钮 */
+.flat-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 8px;
+  background-color: #3498db; /* 纯色 */
   border: none;
-  transition: all 0.3s;
+  transition: background-color 0.2s;
 }
 
-.login-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
+.flat-btn:hover {
+  background-color: #2980b9; /* 点击变深 */
 }
 
-.footer-text {
-  margin-top: 20px;
-  color: #ccc;
-  font-size: 12px;
-}
-
-/* 简单浮动动画 */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+.flat-btn:active {
+  transform: scale(0.98); /* 极简的点击反馈 */
 }
 </style>

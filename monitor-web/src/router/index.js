@@ -34,7 +34,8 @@ const router = createRouter({
         {
           path: 'server',
           name: 'Server',
-          component: () =>import('@/views/monitor/ServerManage.vue')
+          component: () =>import('@/views/monitor/ServerManage.vue'),
+          meta: { title: '服务器管理', requiresAuth: true }
         }
       ]
     },

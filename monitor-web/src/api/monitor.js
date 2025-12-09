@@ -4,8 +4,12 @@ import request from "@/utils/request.js";
 // ===========================
 
 // 获取 CPU 历史数据
-export const getCpuHistory = () => {
-    return request.get('/monitor/cpu-history')
+export const getCpuHistory = (params) => {
+    return request({
+        url: '/api/monitor/cpu-history',
+        method: 'get',
+        params
+    })
 }
 
 // ===========================

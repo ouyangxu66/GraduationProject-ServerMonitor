@@ -2,7 +2,7 @@ server:
   port: 8081  # 客户端运行在 8081 端口，避免和未来服务端的 8080 冲突
 
 monitor:
-  server-url: http://localhost:8080/monitor/report  # 服务端接收接口地址
+  server-url: http://localhost:8080/api/monitor/report  # 服务端接收接口地址
   app-id: 1001           # 假设分配给这台机器的 ID
   app-secret: abc12345   # 通信密钥 (以后鉴权用)
   interval: 5000         # 采集间隔 (毫秒)，5秒一次

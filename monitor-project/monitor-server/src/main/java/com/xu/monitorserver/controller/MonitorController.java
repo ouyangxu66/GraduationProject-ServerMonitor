@@ -1,5 +1,6 @@
 package com.xu.monitorserver.controller;
 
+import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.service.monitorservice.MonitorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/monitor")
+@RequestMapping("api/monitor")
 public class MonitorController {
     @Autowired
     private MonitorService monitorService;
@@ -19,8 +20,8 @@ public class MonitorController {
      *
      */
     @GetMapping("/cpu-history")
-    public List<Map<String,Object>> getCpuHistory(){
-        return monitorService.queryCpuHistory();
+    public R<List<Map<String,Object>>> getCpuHistory(){
+        return R.ok(monitorService.queryCpuHistory());
     }
 
 }

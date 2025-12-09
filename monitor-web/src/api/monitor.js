@@ -1,11 +1,4 @@
-import axios from 'axios'
-
-// 1. 创建 axios 实例 (全文件只写这一次)
-const request = axios.create({
-    baseURL: '/api',
-    timeout: 5000
-})
-
+import request from "@/utils/request.js";
 // ===========================
 //  Dashboard 监控大屏接口
 // ===========================

@@ -13,6 +13,7 @@ import org.springframework.web.socket.WebSocketSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,7 @@ public class SshServiceImpl implements SshService {
             Properties config = new Properties();
             config.put("StrictHostKeyChecking", "no");
             sshSession.setConfig(config);
-            sshSession.connect(3000);
+            sshSession.connect(5000);
 
             // 2. 打开 Shell 通道 (像打开一个终端窗口)
             Channel channel = sshSession.openChannel("shell");
@@ -68,7 +69,8 @@ public class SshServiceImpl implements SshService {
                     int i;
                     // 循环读取 Linux 的输出
                     while ((i = inputStream.read(buffer)) != -1) {
-                        String msg = new String(buffer, 0, i);
+                        //指定使用UTF-8编码,防止中文乱码
+                        String msg = new String(buffer, 0, i, StandardCharsets.UTF_8);
                         // 通过 WebSocket 发回前端,远程服务器响应->客户端
                         if (session.isOpen()) {
                             session.sendMessage(new TextMessage(msg));
@@ -83,11 +85,12 @@ public class SshServiceImpl implements SshService {
         } catch (Exception e) {
             logger.error("SSH 连接失败", e);
             try {
-                // 告诉前端连接失败
-                session.sendMessage(new TextMessage("Error: 连接失败 - " + e.getMessage()));
+                // 发送红色错误提示给前端
+                session.sendMessage(new TextMessage("\r\n\u001B[31mError: 连接失败 - " +
+                                e.getMessage() + "\u001B[0m\r\n"));
                 session.close();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                //do noting
             }
         }
     }
@@ -103,6 +106,7 @@ public class SshServiceImpl implements SshService {
                 outputStream.flush();
             } catch (IOException e) {
                 logger.error("发送指令失败", e);
+                close(session);
             }
         }
     }

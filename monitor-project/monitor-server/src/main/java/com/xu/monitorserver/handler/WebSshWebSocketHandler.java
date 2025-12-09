@@ -1,81 +1,92 @@
 package com.xu.monitorserver.handler;
 
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xu.monitorserver.service.sshservice.SshService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 
-import java.net.URI;
+import java.util.Map;
 
 @Component
 public class WebSshWebSocketHandler implements WebSocketHandler {
 
-    @Autowired
+    private static final Logger logger = LoggerFactory.getLogger(WebSshWebSocketHandler.class);
+
     private SshService sshService;
+
+    public WebSshWebSocketHandler(SshService sshService){
+        this.sshService=sshService;
+    }
+
+    // Jackson JSON 解析工具
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 连接建立后触发
-     * 前端 URL: ws://localhost:8080/ws/ssh?ip=x.x.x.x&user=root&pwd=123
+     * 此时前端只是连上了 WebSocket，还未传递 SSH 目标信息
      */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // 1. 解析 URL 中的参数 (IP, 用户名, 密码)
-        URI uri = session.getUri();
-        String query = uri.getQuery(); // ip=...&user=...
-        // 简单粗暴的解析方式 (实际项目建议用工具类)
-        String[] params = query.split("&");
-        String ip = null, user = null, pwd = null;
-        for (String param : params) {
-            String[] kv = param.split("=");
-            if ("ip".equals(kv[0])) ip = kv[1];
-            if ("user".equals(kv[0])) user = kv[1];
-            if ("pwd".equals(kv[0])) pwd = kv[1];
-        }
-
-        if (ip != null && user != null && pwd != null) {
-            // 2. 调用 Service 开启 SSH 连接
-            sshService.initConnection(session, ip, 22, user, pwd);
-        } else {
-            session.sendMessage(new TextMessage("Error: 参数缺失"));
-            session.close();
-        }
+        logger.info("WebSSH WebSocket 连接建立: {}", session.getId());
+        // 🔴 这里不能建立 SSH 连接，因为还不知道要连哪台服务器
+        // 等待前端发送第一条 JSON 消息
     }
 
     /**
-     * 收到前端消息时触发 (用户按键)
+     * 收到前端消息时触发
+     * 消息格式约定为 JSON: { "operate": "connect|command", ... }
      */
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
         if (message instanceof TextMessage) {
-            // 调用 Service 发送命令
-            sshService.recvClientCommand(session, ((TextMessage) message).getPayload());
+            String payload = ((TextMessage) message).getPayload();
+
+            try {
+                // 1. 解析 JSON
+                // 建议使用 Map 接收，或者你之前定义的 WebSshData 实体类
+                Map<String, Object> data = objectMapper.readValue(payload, Map.class);
+
+                // 2. 获取操作类型
+                String operate = (String) data.get("operate");
+
+                if ("connect".equals(operate)) {
+                    // 🟢 情况 A：建立 SSH 连接请求
+                    String host = (String) data.get("host");
+                    // 防止 port 为空或类型转换错误
+                    Integer port = data.get("port") != null ? Integer.valueOf(String.valueOf(data.get("port"))) : 22;
+                    String username = (String) data.get("username");
+                    String password = (String) data.get("password");
+
+                    // 调用 Service
+                    sshService.initConnection(session, host, port, username, password);
+
+                } else if ("command".equals(operate)) {
+                    // 🟢 情况 B：发送终端命令
+                    String command = (String) data.get("command");
+                    sshService.recvClientCommand(session, command);
+                }
+            } catch (Exception e) {
+                logger.error("消息解析失败", e);
+                // 可以在这里给前端回传一个错误提示
+            }
         }
     }
 
-    /**
-     * 连接关闭时触发
-     */
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-        sshService.close(session);
-    }
-
-    /**
-     * 错误时触发
-     * @param session
-     * @param exception
-     * @throws Exception
-     */
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        logger.error("WebSocket 传输异常", exception);
         sshService.close(session);
     }
 
-    /**
-     * 判断是否支持 partial messages
-     * @return
-     */
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+        logger.info("WebSSH 连接断开: {}", session.getId());
+        sshService.close(session);
+    }
+
+    @Override
     public boolean supportsPartialMessages() {
         return false;
     }

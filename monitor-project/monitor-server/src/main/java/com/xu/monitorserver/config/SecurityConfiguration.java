@@ -43,7 +43,7 @@ public class SecurityConfiguration {
                         // 放行 WebSocket
                         .requestMatchers("/ws/**").permitAll()
                         // 放行 Client 上报接口
-                        .requestMatchers("/monitor/report").permitAll()
+                        .requestMatchers("/api/monitor/report").permitAll()
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
                 )

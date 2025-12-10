@@ -255,8 +255,8 @@ onMounted(() => {
 }
 
 .flat-card {
-  background: #fff;
-  border: 2px solid #ecf0f1;
+  background: var(--el-bg-color);
+  border: 2px solid var(--el-border-color-light);
   border-radius: 16px;
   padding: 30px;
   height: 100%;
@@ -366,7 +366,7 @@ onMounted(() => {
 
 .nickname {
   font-size: 24px;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
   font-weight: 800;
   line-height: 1.4;
   margin: 0 0 8px 0; /* 昵称和角色标签之间的小间距 */
@@ -385,7 +385,7 @@ onMounted(() => {
 .bio-section {
   width: 100%;
   text-align: center;
-  color: #7f8c8d;
+  color: var(--el-text-color-secondary);
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 30px;

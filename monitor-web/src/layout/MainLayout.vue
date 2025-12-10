@@ -1,6 +1,6 @@
 <template>
   <el-container class="layout-container">
-    <!-- 左侧边栏：浅蓝色风格 -->
+    <!-- 左侧边栏：使用 v-bind 动态控制背景，保持你的浅蓝色设计 -->
     <el-aside width="240px" class="aside">
       <div class="logo">
         <span class="logo-icon">🚀</span>
@@ -10,9 +10,9 @@
       <el-menu
           :default-active="activeMenu"
           class="flat-menu"
-          background-color="#98c5e9"
-          text-color="#2c3e50"
-          active-text-color="#2980b9"
+          :background-color="isDark ? '#1d1e1f' : '#98c5e9'"
+          :text-color="isDark ? '#cfd3dc' : '#2c3e50'"
+          :active-text-color="isDark ? '#409eff' : '#2980b9'"
           router
       >
         <el-menu-item index="/">
@@ -33,7 +33,6 @@
     <el-container>
       <!-- 顶部导航栏 -->
       <el-header class="flat-header">
-        <!-- 左侧：显示当前功能名称 -->
         <div class="header-left">
           <div class="page-title-box">
             <span class="title-bar"></span>
@@ -41,17 +40,23 @@
           </div>
         </div>
 
-        <!-- 右侧：个人信息与退出 -->
         <div class="header-right">
+          <!-- 🟢 改进后的主题开关：带文字 -->
+          <div class="theme-switch" @click="themeStore.toggleDark" :class="{ 'is-dark': isDark }">
+            <div class="switch-inner">
+              <el-icon v-if="isDark" class="icon-moon"><Moon /></el-icon>
+              <el-icon v-else class="icon-sun"><Sunny /></el-icon>
+              <span class="switch-text">{{ isDark ? 'Dark' : 'Light' }}</span>
+            </div>
+          </div>
+
           <el-dropdown @command="handleCommand">
             <div class="user-info">
-              <!-- 🟢 绑定 Store 中的 avatar -->
               <el-avatar
                   :size="36"
                   shape="square"
                   :src="userStore.userInfo.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'"
               />
-              <!-- 🟢 绑定 Store 中的 nickname -->
               <span class="username">{{ userStore.userInfo.nickname || 'Admin' }}</span>
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </div>
@@ -65,7 +70,7 @@
         </div>
       </el-header>
 
-      <!-- 内容区域：增加 Keep-Alive 缓存 -->
+      <!-- 内容区域 -->
       <el-main class="flat-main">
         <router-view v-slot="{ Component }">
           <keep-alive :include="['WebSsh']">
@@ -78,20 +83,26 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue' // 🟢 合并导入
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Odometer, Monitor, Service, ArrowDown } from '@element-plus/icons-vue'
+import { useThemeStore } from '@/stores/theme'
+import { Odometer, Monitor, Service, ArrowDown, Moon, Sunny } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
+
+// 响应式获取 isDark 状态
+const { isDark } = storeToRefs(themeStore)
 
 const activeMenu = computed(() => route.path)
-// 动态获取路由配置中的 meta.title
 const pageTitle = computed(() => route.meta.title || '系统功能')
 
+// 处理命令菜单
 const handleCommand = (command) => {
   if (command === 'logout') {
     ElMessageBox.confirm('确认退出当前账户?', '提示', {
@@ -104,12 +115,10 @@ const handleCommand = (command) => {
       ElMessage.success('已安全退出')
     }).catch(() => {})
   } else if (command === 'profile') {
-    // 🟢 修复跳转逻辑
     router.push('/profile')
   }
 }
 
-// 🟢 挂载时拉取最新头像和昵称
 onMounted(() => {
   userStore.fetchUserInfo()
 })
@@ -120,84 +129,31 @@ onMounted(() => {
   height: 100vh;
 }
 
-/* 侧边栏：浅蓝色背景 */
-.aside {
-  background-color: #98c5e9;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #8ab6d9; /* 稍微深一点的边框 */
-}
-
-.logo {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #98c5e9;
-  border-bottom: 1px solid #8ab6d9;
-}
-
-.logo-icon {
-  font-size: 24px;
-  margin-right: 8px;
-}
-
-.logo-text {
-  font-size: 20px;
-  font-weight: 800;
-  color: #2c3e50; /* 深色字体，高对比度 */
-}
-
-.flat-menu {
-  border-right: none;
-  background-color: #98c5e9; /* 确保菜单背景一致 */
-}
-
-/* 菜单项样式重写 */
-:deep(.el-menu-item) {
-  font-weight: 600;
-  margin: 4px 10px;
-  border-radius: 8px;
-  height: 50px;
-  line-height: 50px;
-}
-
-:deep(.el-menu-item:hover) {
-  background-color: rgba(255, 255, 255, 0.3) !important; /* 悬停时的半透明白 */
-}
-
-/* 菜单选中状态：纯白背景 + 深蓝文字 */
-:deep(.el-menu-item.is-active) {
-  background-color: #ffffff !important;
-  color: #2980b9 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* 顶部栏 */
+/* 🟢 CSS 变量适配区 */
 .flat-header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #ecf0f1;
+  /* 使用 Element 变量：亮色时为白色，暗色时为深灰 */
+  background-color: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 30px;
   height: 64px;
+  transition: all 0.3s;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.page-title-box {
-  display: flex;
-  align-items: center;
+.flat-main {
+  /* 页面背景色：亮色时为浅灰，暗色时为纯黑 */
+  background-color: var(--el-bg-color-page);
+  padding: 24px;
+  overflow-x: hidden;
+  transition: all 0.3s;
 }
 
 .title-bar {
   width: 4px;
   height: 18px;
-  background-color: #3498db;
+  background-color: var(--el-color-primary);
   margin-right: 10px;
   border-radius: 2px;
 }
@@ -205,10 +161,89 @@ onMounted(() => {
 .page-title {
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--el-text-color-primary); /* 文字颜色自适应 */
   margin: 0;
 }
 
+/* 左侧边栏动态配色 */
+.aside {
+  background-color: v-bind("isDark ? '#1d1e1f' : '#98c5e9'");
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--el-border-color-light);
+  transition: background-color 0.3s;
+}
+
+.logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: v-bind("isDark ? '#1d1e1f' : '#98c5e9'");
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  transition: background-color 0.3s;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: v-bind("isDark ? '#fff' : '#2c3e50'");
+}
+
+.logo-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+/* 🟢 主题开关样式优化 (胶囊风格) */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.theme-switch {
+  cursor: pointer;
+  background-color: var(--el-fill-color); /* 浅灰底色 */
+  padding: 4px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--el-border-color);
+  transition: all 0.3s;
+}
+
+.theme-switch:hover {
+  border-color: var(--el-color-primary);
+}
+
+/* 暗黑模式下开关背景变深 */
+.theme-switch.is-dark {
+  background-color: #333;
+  border-color: #555;
+}
+
+.switch-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.switch-text {
+  color: var(--el-text-color-regular);
+  user-select: none;
+}
+
+.icon-sun {
+  color: #f1c40f;
+  animation: rotate 10s linear infinite;
+}
+
+.icon-moon {
+  color: #f1c40f;
+}
+
+/* 用户信息 */
 .user-info {
   display: flex;
   align-items: center;
@@ -219,19 +254,18 @@ onMounted(() => {
 }
 
 .user-info:hover {
-  background-color: #f0f2f5;
+  background-color: var(--el-fill-color);
 }
 
 .username {
   margin-left: 10px;
   margin-right: 4px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
 }
 
-.flat-main {
-  background-color: #f9fbfc;
-  padding: 24px;
-  overflow-x: hidden;
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

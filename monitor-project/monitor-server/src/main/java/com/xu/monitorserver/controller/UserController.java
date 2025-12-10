@@ -76,4 +76,13 @@ public class UserController {
             return R.fail("旧密码错误,请重新输入!");
         }
     }
+
+    @PostMapping("/delete-account")
+    public R<Void> deleteAccount(@RequestBody Map<String, String> params) {
+        String password = params.get("password");
+        if (password == null) return R.fail("请输入密码");
+
+        userService.deleteAccount(password);
+        return R.ok();
+    }
 }

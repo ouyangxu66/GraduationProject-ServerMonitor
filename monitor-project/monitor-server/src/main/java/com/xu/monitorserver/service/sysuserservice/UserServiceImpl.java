@@ -124,4 +124,22 @@ public class UserServiceImpl implements IUserService {
                 .eq(SysUser::getUsername, getCurrentUsername()));
         return passwordEncoder.matches(rawPassword,user.getPassword());
     }
+
+    @Override
+    public void deleteAccount(String password) {
+        String username = getCurrentUsername();
+        SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUsername, username));
+
+        // 1. 验证密码 (注销是高风险操作，必须验证)
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ServiceException("密码错误，无法注销");
+        }
+
+        // 2. 逻辑删除 (更新 deleted 字段)
+        user.setDeleted(1);
+        userMapper.updateById(user);
+
+        // 或者物理删除: userMapper.deleteById(user.getId());
+    }
 }

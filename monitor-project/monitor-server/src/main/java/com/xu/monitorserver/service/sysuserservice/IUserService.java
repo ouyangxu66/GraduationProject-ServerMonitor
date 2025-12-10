@@ -36,4 +36,6 @@ public interface IUserService {
      * @return ture or false
      */
     boolean checkPassword(String rawPassword);
+
+    void deleteAccount(String password);
 }

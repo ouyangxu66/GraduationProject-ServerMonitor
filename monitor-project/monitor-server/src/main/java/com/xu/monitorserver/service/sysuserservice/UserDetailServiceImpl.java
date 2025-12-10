@@ -1,6 +1,8 @@
 package com.xu.monitorserver.service.sysuserservice;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.xu.monitorserver.mapper.SysMenuMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,13 +26,16 @@ public class UserDetailServiceImpl implements UserDetailsService {
      * 系统用户Mapper，用于访问数据库中的用户信息
      */
     private final SysUserMapper sysUserMapper;
+    private SysMenuMapper sysMenuMapper;
     
     /**
      * 构造函数注入SysUserMapper依赖
      * @param sysUserMapper 系统用户数据访问对象
      */
-    public UserDetailServiceImpl(SysUserMapper sysUserMapper){
+    public UserDetailServiceImpl(SysUserMapper sysUserMapper,
+                                 SysMenuMapper sysMenuMapper){
         this.sysUserMapper=sysUserMapper;
+        this.sysMenuMapper=sysMenuMapper;
     }
 
     /**
@@ -41,25 +46,31 @@ public class UserDetailServiceImpl implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //1.使用QueryWrapper查询指定用户名的系统用户
-        SysUser sysUser = sysUserMapper.selectOne(
-                new QueryWrapper<SysUser>().eq("username", username));
-        // 检查用户是否存在
-        if (sysUser == null){
-            // 抛出用户名未找到异常
-            throw new UsernameNotFoundException("用户不存在:"+username);
+        // 1. 查询用户 (过滤掉已删除的)
+        SysUser sysUser = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUsername, username)
+                .eq(SysUser::getDeleted, 0)); // 🟢 关键：只查没被注销的
+
+        if (sysUser == null) {
+            throw new UsernameNotFoundException("用户不存在");
         }
-        //2.解析用户角色和权限
-        List<GrantedAuthority> authorities=new ArrayList<>();
-        if (sysUser.getRole() != null && !sysUser.getRole().isEmpty()){
-            authorities.add(new SimpleGrantedAuthority(sysUser.getRole()));
+
+        // 2. 动态查询权限
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        // 2.1 添加角色 (ROLE_ADMIN)
+        authorities.add(new SimpleGrantedAuthority(sysUser.getRole()));
+
+        // 2.2 添加具体权限 (server:add, server:list)
+        // 🟢 核心：根据角色去 sys_menu 表查权限
+        List<String> perms = sysMenuMapper.selectPermsByRoleCode(sysUser.getRole()); // 🟢 核心：根据角色去 sys_menu 表查权限
+        for (String perm : perms) {
+            if (perm != null && !perm.isEmpty()) {
+                authorities.add(new SimpleGrantedAuthority(perm));
+            }
         }
-        //3.返回Spring Security 标准的User 对象
-        //User其实是UserDetails接口的一个具体实现类
-        return new User(
-                sysUser.getUsername(),
-                sysUser.getPassword(),
-                authorities
-        );
+
+        // 3. 返回 Security User
+        return new User(sysUser.getUsername(), sysUser.getPassword(), authorities);
     }
 }

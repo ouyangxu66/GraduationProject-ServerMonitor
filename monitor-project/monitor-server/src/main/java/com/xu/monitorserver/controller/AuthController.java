@@ -2,6 +2,7 @@ package com.xu.monitorserver.controller;
 
 
 import com.xu.monitorcommon.dto.LoginDTO;
+import com.xu.monitorcommon.dto.RegisterDTO;
 import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.service.authservice.IAuthService;
 import org.springframework.web.bind.annotation.*;
@@ -25,5 +26,10 @@ public class AuthController {
         Map<String, String> result = new HashMap<>();
         result.put("token", token);
         return R.ok(result);
+    }
+    @PostMapping("/register")
+    public R<Void> register(@RequestBody RegisterDTO dto) {
+        authService.register(dto);
+        return R.ok();
     }
 }

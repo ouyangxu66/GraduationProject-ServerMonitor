@@ -54,6 +54,11 @@ public class SysUser {
     private String role;
 
     /**
+     * 逻辑删除 (0-未删除, 1-已删除)
+     */
+    private int deleted;
+
+    /**
      * 创建时间
      * 使用 JsonFormat 格式化返回给前端的时间字符串
      */
@@ -145,5 +150,14 @@ public class SysUser {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+
+    public int getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(int deleted) {
+        this.deleted = deleted;
     }
 }

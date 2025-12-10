@@ -44,8 +44,6 @@ public class SecurityConfiguration {
                         .requestMatchers("/ws/**").permitAll()
                         // 放行 Client 上报接口
                         .requestMatchers("/api/monitor/report").permitAll()
-                        // 放行图片静态资源
-                        .requestMatchers("/images/**").permitAll()
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
                 )

@@ -6,7 +6,7 @@ import com.xu.monitorcommon.dto.UserProfileDTO;
 import com.xu.monitorserver.entity.SysUser;
 import com.xu.monitorserver.exception.ServiceException;
 import com.xu.monitorserver.mapper.SysUserMapper;
-import org.springframework.beans.factory.annotation.Value;
+import com.xu.monitorserver.utils.AliyunOssUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,25 +14,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.UUID;
-
 @Service
 public class UserServiceImpl implements IUserService {
 
     private SysUserMapper userMapper;
     private PasswordEncoder passwordEncoder;
+    private AliyunOssUtil aliyunOssUtil;
 
-    public UserServiceImpl(SysUserMapper sysUserMapper,PasswordEncoder passwordEncoder){
+    public UserServiceImpl(SysUserMapper sysUserMapper,
+                           PasswordEncoder passwordEncoder,
+                           AliyunOssUtil aliyunOssUtil){
         this.passwordEncoder=passwordEncoder;
         this.userMapper=sysUserMapper;
+        this.aliyunOssUtil=aliyunOssUtil;
     }
-
-    //从 yaml 注入文件上传路径
-    @Value("${monitor.upload.path}")
-    private String uploadPath;
-
     // 辅助方法：获取当前登录用户名
     /**
      * 修复后的获取当前登录用户名方法
@@ -100,45 +95,21 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public String uploadAvatar(MultipartFile file) {
-        // 1. 校验
+        // 1. 基础校验
         if (file.isEmpty()) {
-            // 直接抛出业务异常，GlobalExceptionHandler 会捕获并返回 500 给前端
             throw new ServiceException("上传文件不能为空");
         }
 
-        // 2. 准备目录
-        File dir = new File(uploadPath);
-        if (!dir.exists()) {
-            dir.mkdirs(); // 自动创建多级目录
+        // 校验文件大小 (例如限制 2MB)
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new ServiceException("图片大小不能超过2MB");
         }
 
-        // 3. 生成唯一文件名 (防止重名覆盖)
-        // 提取后缀名 (如 .png)
-        String originalFilename = file.getOriginalFilename();
-        String suffix = null;
-        if (originalFilename != null) {
-            suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
-        String fileName = UUID.randomUUID().toString() + suffix;
+        // 2. 调用 OSS 工具类上传
+        // 所有的 IO 异常处理、文件名生成都在 Util 里做好了
+        String avatarUrl = aliyunOssUtil.uploadFile(file);
 
-        File dest = new File(dir, fileName);
-
-        // 4. 保存文件 (核心解答区域)
-        try {
-            // 执行保存
-            file.transferTo(dest);
-        } catch (IOException e) {
-            // 🔴 这里的 try-catch 是为了将 "底层技术异常" 转换为 "业务异常"
-            // 这样 Controller 不需要关心什么是 IOException，只知道"业务失败了"
-            throw new ServiceException("文件上传失败: " + e.getMessage());
-        }
-
-        // 5. 生成访问 URL
-        // 注意：生产环境这里通常是域名，这里为了演示用 localhost + 映射路径
-        // 假设映射路径是 /images/**
-        String avatarUrl = "http://localhost:8080/images/" + fileName;
-
-        // 6. 更新数据库
+        // 3. 更新数据库
         userMapper.update(null, new LambdaUpdateWrapper<SysUser>()
                 .eq(SysUser::getUsername, getCurrentUsername())
                 .set(SysUser::getAvatar, avatarUrl));

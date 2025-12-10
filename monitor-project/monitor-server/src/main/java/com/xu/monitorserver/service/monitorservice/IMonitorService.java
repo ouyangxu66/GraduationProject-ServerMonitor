@@ -5,7 +5,7 @@ import com.xu.monitorcommon.moudule.BaseMonitorModel;
 import java.util.List;
 import java.util.Map;
 
-public interface MonitorService {
+public interface IMonitorService {
 
     /**
      * 保存监控数据

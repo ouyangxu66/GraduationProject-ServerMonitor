@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Service
-public class SshServiceImpl implements SshService {
+public class SshServiceImpl implements ISshService {
 
     private static final Logger logger = LoggerFactory.getLogger(SshServiceImpl.class);
 

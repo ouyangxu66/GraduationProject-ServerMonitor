@@ -2,7 +2,7 @@ package com.xu.monitorserver.service.sshservice;
 
 import org.springframework.web.socket.WebSocketSession;
 
-public interface SshService {
+public interface ISshService {
 
     /**
      * 初始化 SSH 连接

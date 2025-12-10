@@ -2,7 +2,7 @@ package com.xu.monitorserver.controller;
 
 import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.entity.ServerInfo;
-import com.xu.monitorserver.service.serverservice.ServerInfoService;
+import com.xu.monitorserver.service.serverservice.IServerInfoService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,10 +12,10 @@ import java.util.List;
 public class ServerInfoController {
 
 
-    private ServerInfoService serverInfoService;
+    private IServerInfoService serverInfoService;
 
-    public ServerInfoController(ServerInfoService serverInfoService){
-        this.serverInfoService=serverInfoService;
+    public ServerInfoController(IServerInfoService serverInfoService){
+        this.serverInfoService = serverInfoService;
     }
 
     /**

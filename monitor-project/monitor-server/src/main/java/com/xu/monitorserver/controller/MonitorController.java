@@ -1,7 +1,7 @@
 package com.xu.monitorserver.controller;
 
 import com.xu.monitorcommon.result.R;
-import com.xu.monitorserver.service.monitorservice.MonitorService;
+import com.xu.monitorserver.service.monitorservice.IMonitorService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,10 +13,10 @@ import java.util.Map;
 @RequestMapping("api/monitor")
 public class MonitorController {
 
-    private MonitorService monitorService;
+    private IMonitorService monitorService;
 
-    public MonitorController(MonitorService monitorService){
-        this.monitorService=monitorService;
+    public MonitorController(IMonitorService monitorService){
+        this.monitorService = monitorService;
     }
 
     /**

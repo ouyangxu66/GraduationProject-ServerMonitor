@@ -19,10 +19,14 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class MonitorServiceImpl implements MonitorService {
+public class MonitorServiceImpl implements IMonitorService {
 
-    @Autowired
+
     private InfluxDBClient influxDBClient;
+
+    public MonitorServiceImpl(InfluxDBClient influxDBClient){
+        this.influxDBClient=influxDBClient;
+    }
 
     @Value("${influx.bucket}")
     private String bucket;

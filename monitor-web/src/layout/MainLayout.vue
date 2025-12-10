@@ -45,8 +45,14 @@
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <div class="user-info">
-              <el-avatar :size="36" shape="square" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-              <span class="username">Admin</span>
+              <!-- 🟢 绑定 Store 中的 avatar -->
+              <el-avatar
+                  :size="36"
+                  shape="square"
+                  :src="userStore.userInfo.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'"
+              />
+              <!-- 🟢 绑定 Store 中的 nickname -->
+              <span class="username">{{ userStore.userInfo.nickname || 'Admin' }}</span>
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </div>
             <template #dropdown>
@@ -62,7 +68,6 @@
       <!-- 内容区域：增加 Keep-Alive 缓存 -->
       <el-main class="flat-main">
         <router-view v-slot="{ Component }">
-          <!-- include="WebSsh" 必须与组件内的 name 属性一致 -->
           <keep-alive :include="['WebSsh']">
             <component :is="Component" />
           </keep-alive>
@@ -73,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue' // 🟢 合并导入
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Odometer, Monitor, Service, ArrowDown } from '@element-plus/icons-vue'
@@ -99,9 +104,15 @@ const handleCommand = (command) => {
       ElMessage.success('已安全退出')
     }).catch(() => {})
   } else if (command === 'profile') {
-    ElMessage.info('个人资料功能开发中...')
+    // 🟢 修复跳转逻辑
+    router.push('/profile')
   }
 }
+
+// 🟢 挂载时拉取最新头像和昵称
+onMounted(() => {
+  userStore.fetchUserInfo()
+})
 </script>
 
 <style scoped>
@@ -158,8 +169,8 @@ const handleCommand = (command) => {
 /* 菜单选中状态：纯白背景 + 深蓝文字 */
 :deep(.el-menu-item.is-active) {
   background-color: #ffffff !important;
-  color: #2980b9 !important; /* 选中后的文字颜色 */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* 极淡的阴影增加层次 */
+  color: #2980b9 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* 顶部栏 */

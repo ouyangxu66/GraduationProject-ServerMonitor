@@ -36,6 +36,12 @@ const router = createRouter({
           name: 'Server',
           component: () =>import('@/views/monitor/ServerManage.vue'),
           meta: { title: '服务器管理', requiresAuth: true }
+        },
+        {
+          path: 'profile',
+          name: 'Profile',
+          component: () => import('@/views/profile/index.vue'),
+          meta: { title: '个人中心', requiresAuth: true }
         }
       ]
     },

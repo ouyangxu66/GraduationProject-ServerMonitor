@@ -44,6 +44,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from "element-plus";
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -61,13 +62,27 @@ const rules = {
 }
 
 const handleLogin = () => {
+  if (!formRef.value) return
+
   formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
+        // 调用 Store 登录
         await userStore.login(form)
+
+        // 登录成功提示
+        ElMessage.success('登录成功，欢迎回来')
+
+        // 跳转首页
         router.push('/')
-      } catch (e) {
+
+      } catch (error) {
+        // 🟢 2. 捕获错误并弹窗
+        // error.message 来自 request.js 拦截器中 new Error(res.msg)
+        // 后端通常返回 "账号或密码错误"
+        console.error('登录失败:', error)
+        ElMessage.error(error.message || '登录失败，请检查账号密码')
       } finally {
         loading.value = false
       }

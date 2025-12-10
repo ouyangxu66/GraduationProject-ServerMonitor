@@ -3,6 +3,9 @@ server:
 
 monitor:
   app-secret: abc12345
+  upload:
+    path: D:/GraduationProject/monitor-uploads/ #上传文件保存路径
+    mapping-path: /images/** #映射的URL前缀(浏览器通过这个路径访问)
 
 # 👇 InfluxDB 配置
 influx:

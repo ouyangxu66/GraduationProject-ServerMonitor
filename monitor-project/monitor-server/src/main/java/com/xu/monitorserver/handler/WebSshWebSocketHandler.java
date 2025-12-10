@@ -1,7 +1,7 @@
 package com.xu.monitorserver.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xu.monitorserver.service.sshservice.SshService;
+import com.xu.monitorserver.service.sshservice.ISshService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -14,9 +14,9 @@ public class WebSshWebSocketHandler implements WebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSshWebSocketHandler.class);
 
-    private SshService sshService;
+    private ISshService sshService;
 
-    public WebSshWebSocketHandler(SshService sshService){
+    public WebSshWebSocketHandler(ISshService sshService){
         this.sshService=sshService;
     }
 

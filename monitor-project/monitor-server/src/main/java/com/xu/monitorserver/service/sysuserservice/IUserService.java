@@ -29,4 +29,11 @@ public interface IUserService {
      * @return 图片访问URL
      */
     String uploadAvatar(MultipartFile file);
+
+    /**
+     * 校验密码
+     * @param rawPassword 原始密码
+     * @return ture or false
+     */
+    boolean checkPassword(String rawPassword);
 }

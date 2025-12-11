@@ -19,8 +19,17 @@ public class ServerInfo {
     private Integer port;    // 端口
     private String username; // 用户名
     private String password; // 密码
+    private String createBy; // 创建人
 
-    private LocalDateTime createTime; // 创建时间
+    public String getCreateBy() {
+        return createBy;
+    }
+
+    public void setCreateBy(String createBy) {
+        this.createBy = createBy;
+    }
+
+    private LocalDateTime createTime;
 
     public Long getId() {
         return id;

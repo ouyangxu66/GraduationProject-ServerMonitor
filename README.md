@@ -16,7 +16,7 @@
 
 | 📊 实时监控仪表盘 | 💻 Web SSH 远程终端 |
 | :---: | :---: |
-| *(在此处放置 Dashboard 截图)*<br>CPU/内存实时折线图 | *(在此处放置 WebSSH 截图)*<br>基于 Xterm.js 的全功能终端 |
+| <img width="2554" height="1238" alt="image" src="https://github.com/user-attachments/assets/5655e392-cbf6-4c13-bc34-73ec22e1083c" /><br>CPU/内存实时折线图 | <img width="2553" height="1234" alt="image" src="https://github.com/user-attachments/assets/ce7248ac-ee3f-4841-b83f-2cd847fa7c74" /><br>基于 Xterm.js 的全功能终端 
 
 ---
 

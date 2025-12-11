@@ -27,9 +27,9 @@ public class UserManageController {
      * 分页获取用户列表
      */
     @GetMapping("/list")
-    public R<IPage<SysUser>> list(@RequestParam(defaultValue = "1") Integer page,
-                                  @RequestParam(defaultValue = "10")Integer size,
-                                  @RequestParam(required = false )String username){
+    public R<IPage<SysUser>> list(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                                  @RequestParam(value = "size", defaultValue = "10")Integer size,
+                                  @RequestParam(value = "username", required = false )String username){
         Page<SysUser> pageParm = new Page<>(page,size);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 

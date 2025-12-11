@@ -6,6 +6,7 @@ import com.xu.monitorserver.entity.ServerInfo;
 import com.xu.monitorserver.mapper.ServerInfoMapper;
 import com.xu.monitorserver.service.serverservice.IServerInfoService;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -67,10 +68,10 @@ public class ServerInfoController {
 
     /**
      * 删除服务器
-     * DELETE /server/delete?id=1
+     * DELETE /server/1
      */
-    @DeleteMapping("/delete")
-    public R<String> delete(@RequestParam Long id) {
+    @DeleteMapping("/{id}")
+    public R<String> delete(@PathVariable("id") Long id) {
         String username = getCurrentUsername();
         ServerInfo old = serverInfoMapper.selectById(id);
         if (old == null)return R.ok();
@@ -87,6 +88,12 @@ public class ServerInfoController {
      * 当对服务器进行操作时先验证当前登录用户是否有权限
      */
     private String getCurrentUsername(){
-        return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof String) {
+            return (String) principal;
+        } else {
+            // 假设 principal 是 UserDetails 的实现类
+            return ((UserDetails) principal).getUsername();
+        }
     }
 }

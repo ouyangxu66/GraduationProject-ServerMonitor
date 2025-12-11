@@ -2,11 +2,13 @@ package com.xu.monitorserver.entity;
 
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 系统用户实体类
@@ -17,6 +19,8 @@ public class SysUser {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @TableField(exist = false) //非数据库字段
+    private List<String> permission;
     /**
      * 用户名 (登录用)
      */
@@ -72,6 +76,14 @@ public class SysUser {
     private LocalDateTime updateTime;
 
     //getter 和 setter 方法
+    public List<String> getPermission() {
+        return permission;
+    }
+
+    public void setPermission(List<String> permission) {
+        this.permission = permission;
+    }
+
     public Long getId() {
         return id;
     }

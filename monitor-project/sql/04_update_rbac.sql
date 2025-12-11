@@ -4,3 +4,10 @@ ALTER TABLE `server_info`
 
 -- (可选) 初始化旧数据：把现有的服务器都归属给 admin，防止旧数据查不到
 UPDATE `server_info` SET `create_by` = 'admin' WHERE `create_by` IS NULL;
+
+-- 确保普通用户(role_id=2) 拥有完整的服务器管理权限
+-- menu_id 对应: 2=新增, 3=修改, 4=删除
+
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES (2, 2); -- server:add
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES (2, 3); -- server:edit
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES (2, 4); -- server:delete

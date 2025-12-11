@@ -27,6 +27,13 @@
           <el-icon><Monitor /></el-icon>
           <span>远程终端</span>
         </el-menu-item>
+        <el-menu-item
+            index="/userManage"
+            v-if="userStore.userInfo.role === 'ROLE_ADMIN'"
+        >
+          <el-icon><UserFilled /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

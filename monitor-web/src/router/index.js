@@ -13,6 +13,7 @@ const router = createRouter({
       component: () => import('@/views/login/index.vue'),
       meta: { title: '登录' }
     },
+      // 注册页
     {
       path: '/register',
       name: 'Register',
@@ -25,29 +26,40 @@ const router = createRouter({
       component: MainLayout, // 根路径使用 Layout 组件
       redirect: '/dashboard',
       children: [
+          // 仪表盘路由
         {
           path: 'dashboard', // 注意：子路由路径不需要加 /
           name: 'Dashboard',
           component: () => import('@/views/dashboard/index.vue'),
           meta: { title: '监控大屏', requiresAuth: true }
         },
+          // 监控路由
         {
           path: 'ssh',
           name: 'WebSsh',
           component: () => import('@/views/monitor/WebSsh.vue'),
           meta: { title: '远程终端', requiresAuth: true }
         },
+          // 服务器管理路由
         {
           path: 'server',
           name: 'Server',
           component: () =>import('@/views/monitor/ServerManage.vue'),
           meta: { title: '服务器管理', requiresAuth: true }
         },
+          // 菜单管理路由
         {
           path: 'profile',
           name: 'Profile',
           component: () => import('@/views/profile/index.vue'),
           meta: { title: '个人中心', requiresAuth: true }
+        },
+         //用户管理路由
+        {
+          path: 'userManage',
+          name: 'UserManage',
+          component: () => import('@/views/system/UserManage.vue'),
+          meta: { title: '用户管理', requiresAuth: true }
         }
       ]
     },

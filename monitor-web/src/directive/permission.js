@@ -1,36 +1,26 @@
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user.js'
 
 export default {
     mounted(el, binding) {
-        const { value } = binding // 例如: ['server:delete']
+        const { value } = binding // 指令接收到的值，例如: ['server:delete']
         const userStore = useUserStore()
 
-        // 获取当前用户角色
+        // 1. 获取当前用户角色
         const role = userStore.userInfo.role
 
-        // 逻辑：
-        // 1. 如果是超级管理员 (ROLE_ADMIN)，拥有所有权限
-        // 2. 如果是普通用户 (ROLE_USER)，则根据具体的业务规则判断
-        //    根据之前的 SQL 设计，普通用户只有 server:list，没有 server:delete
+        // 2. 🟢 获取当前用户拥有的所有权限 (从后端返回的 permission 字段)
+        const permission = userStore.userInfo.permission || []
 
         if (value && value instanceof Array && value.length > 0) {
             const requiredPerms = value
 
-            let hasPermission = false
-
-            if (role === 'ROLE_ADMIN') {
-                hasPermission = true
-            } else {
-                // 对于普通用户，检查是否拥有 requiredPerms 中的任意一个
-                // 这里简化处理：假设 store 中暂存的是 role，
-                // 实际商业项目中，login接口通常返回 permissions: ['server:list', ...] 数组
-                // 这里我们在前端做一个简单的映射模拟数据库逻辑：
-                const userPerms = ['server:list'] // 普通用户拥有的权限
-                hasPermission = userPerms.some(p => requiredPerms.includes(p))
-            }
+            // 判断逻辑：
+            // 如果是超级管理员，或者拥有所需权限中的任意一个，则通过
+            const hasPermission = role === 'ROLE_ADMIN' ||
+                permission.some(perm => requiredPerms.includes(perm))
 
             if (!hasPermission) {
-                // 没有权限，移除 DOM 元素，防止用户点击
+                // 没有权限，移除 DOM 元素
                 el.parentNode && el.parentNode.removeChild(el)
             }
         } else {

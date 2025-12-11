@@ -1,6 +1,9 @@
 package com.xu.monitorserver.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.utils.JwtUtils;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,10 +79,15 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             jwt=authHeader.substring(7);
             try {
                 // 从JWT令牌中提取用户名
-                username=jwtUtils.extractUsername(jwt);
+                username = jwtUtils.extractUsername(jwt);
+            }catch (ExpiredJwtException e){
+                logger.warn("JWT已过期: {}", e.getMessage());
+                response401(response, "Token已过期，请刷新");
+                return; // ⛔ 终止过滤器链，不再往后走
             } catch (Exception e) {
                 // 记录JWT解析失败的日志
                 logger.warn("JWT解析Username失败:{}",e.getMessage());
+                response401(response, "Token无效");
             }
         }
 
@@ -106,5 +114,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         //3.放行请求
         // 继续执行过滤器链中的下一个过滤器
         filterChain.doFilter(request,response);
+    }
+    // 辅助方法：手动写入 JSON 响应
+    private void response401(HttpServletResponse response, String msg) throws IOException {
+        response.setStatus(401); // HTTP 状态码
+        response.setContentType("application/json;charset=UTF-8");
+        // 使用 R 类封装返回结果，code=401
+        String json = new ObjectMapper().writeValueAsString(R.fail(401, msg));
+        response.getWriter().write(json);
     }
 }

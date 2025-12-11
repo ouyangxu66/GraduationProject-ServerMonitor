@@ -26,11 +26,9 @@ public class JwtUtils {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    /**
-     * Token过期时间设置为24小时（毫秒）
-     * 86400秒 = 24小时 * 60分钟 * 60秒 * 1000毫秒
-     */
-    private static final long EXPIRATION = 86400 * 1000L;
+    // 定义两个常量
+    public static final long ACCESS_EXPIRE = 60 * 60 * 1000L;      // 一个小时
+    public static final long REFRESH_EXPIRE = 7 * 24 * 60 * 60 * 1000L; // 7天
 
 
     /**
@@ -48,28 +46,24 @@ public class JwtUtils {
      */
     public String generateToken(String username){
         // 创建声明集合，可以添加自定义声明信息
-        Map<String, Object> claims = new HashMap<>();
         // 调用创建token的方法
-        return createToken(claims,username);
+        return createToken(username, ACCESS_EXPIRE);
     }
 
     /**
      * 创建JWT token的核心方法
-     * 
-     * @param claims 自定义声明映射，可以包含用户角色、权限等额外信息
+     *
      * @param subject 主题，这里使用用户名作为主题标识
      * @return 返回构建完成并签名的JWT字符串
      */
-    private String createToken(Map<String, Object> claims, String subject) {
+    public String createToken(String subject, long expireMillis) {
         return Jwts.builder()
-                // 设置声明信息（可自定义字段）
-                .setClaims(claims)
                 // 设置主题（subject），通常是用户标识
                 .setSubject(subject)
                 // 设置签发时间
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 // 设置过期时间（当前时间+有效期）
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + expireMillis))
                 // 使用指定密钥和算法进行签名
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 // 构建JWT并压缩为字符串

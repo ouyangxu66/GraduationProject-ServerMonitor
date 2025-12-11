@@ -20,12 +20,20 @@ public class AuthController {
         this.authService = authService;
     }
 
+    // 修改登录返回类型为 Map
     @PostMapping("/login")
     public R<Map<String, String>> login(@RequestBody LoginDTO loginDTO) {
-        String token = authService.login(loginDTO.getUsername(), loginDTO.getPassword());
-        Map<String, String> result = new HashMap<>();
-        result.put("token", token);
-        return R.ok(result);
+        // 调用修改后的 login 方法
+        Map<String, String> tokens = authService.login(loginDTO.getUsername(), loginDTO.getPassword());
+        return R.ok(tokens);
+    }
+
+    // 🟢 新增：刷新接口
+    @PostMapping("/refresh")
+    public R<Map<String, String>> refresh(@RequestBody Map<String, String> params) {
+        String refreshToken = params.get("refreshToken");
+        Map<String, String> tokens = authService.refreshToken(refreshToken);
+        return R.ok(tokens);
     }
     @PostMapping("/register")
     public R<Void> register(@RequestBody RegisterDTO dto) {

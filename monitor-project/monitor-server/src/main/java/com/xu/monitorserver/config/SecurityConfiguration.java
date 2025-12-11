@@ -47,8 +47,18 @@ public class SecurityConfiguration {
                         .requestMatchers("/ws/**").permitAll()
                         // 放行 Client 上报接口
                         .requestMatchers("/api/monitor/report").permitAll()
+                        // 允许匿名访问刷新接口
+                        .requestMatchers("/api/auth/refresh").permitAll()
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
+                )
+                // 新增：配置异常处理器，处理未登录(401)的情况
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"code\":401,\"msg\":\"未授权，请登录\"}");
+                        })
                 )
                 // 5. 添加 JWT 过滤器
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

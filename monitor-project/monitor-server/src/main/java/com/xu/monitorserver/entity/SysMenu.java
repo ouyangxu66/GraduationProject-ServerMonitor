@@ -4,16 +4,16 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("sys_menu")
 public class SysMenu {
-    private long id; // 主键id
+    private Long id; // 主键id
     private String menuName; // 菜单名称
     private String perms; // 权限标识
     private String type; // 菜单类型
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

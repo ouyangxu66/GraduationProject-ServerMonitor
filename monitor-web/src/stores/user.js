@@ -5,6 +5,7 @@ import {getUserInfo as getUserInfoApi} from '@/api/user'// 引入获取信息接
 
 export const useUserStore = defineStore('user', () => {
     const token = ref(localStorage.getItem('token') || '')
+    const refreshToken = ref(localStorage.getItem('refreshToken') || '')
     // 🟢 新增：全局存储用户信息 (头像、昵称)
     const userInfo = ref({
         nickname: '',
@@ -12,29 +13,21 @@ export const useUserStore = defineStore('user', () => {
     })
 
     const login = async (loginForm) => {
-        try {
-            const res = await loginApi(loginForm)
+        const data = await loginApi(loginForm)
+        // 后端现在返回 { accessToken: "...", refreshToken: "..." }
+        token.value = data.accessToken
+        refreshToken.value = data.refreshToken
 
-            // 🟢 核心修复：增加判空保护
-            if (!res) {
-                throw new Error('登录失败：接口未返回任何数据')
-            }
+        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken) // 🟢 存入
+    }
 
-            // 兼容逻辑：如果 res 已经是 token 字符串，或者 res.token 存在
-            const tokenStr = res.token || res
-
-            // 再次校验 token 是否为字符串
-            if (typeof tokenStr !== 'string') {
-                console.error('无效的 Token 格式:', tokenStr)
-                throw new Error('登录失败：Token 格式错误')
-            }
-
-            token.value = tokenStr
-            localStorage.setItem('token', tokenStr)
-            return Promise.resolve()
-        } catch (error) {
-            return Promise.reject(error)
-        }
+    // 🟢 更新 Token 的动作
+    const setTokens = (newAccess, newRefresh) => {
+        token.value = newAccess
+        refreshToken.value = newRefresh
+        localStorage.setItem('token', newAccess)
+        localStorage.setItem('refreshToken', newRefresh)
     }
 
     // 🟢 新增：获取并更新用户信息的 Action
@@ -57,6 +50,8 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         token,
+        refreshToken,
+        setTokens,
         userInfo, // 导出 state
         login,
         logout,

@@ -6,6 +6,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import permission from "@/directive/permission";
 
 // 引入路由守卫
 import './router/permission'
@@ -29,5 +30,5 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app.use(router)
 app.use(ElementPlus)
-
 app.mount('#app')
+app.directive('permission',permission)

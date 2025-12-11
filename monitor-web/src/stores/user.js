@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { login as loginApi, getUserInfo as getUserInfoApi } from '@/api/auth' // 引入获取信息接口
+import { login as loginApi} from '@/api/auth'
+import {getUserInfo as getUserInfoApi} from '@/api/user'// 引入获取信息接口
 
 export const useUserStore = defineStore('user', () => {
     const token = ref(localStorage.getItem('token') || '')

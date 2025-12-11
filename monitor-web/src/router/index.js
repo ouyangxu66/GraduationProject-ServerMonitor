@@ -6,12 +6,18 @@ import MainLayout from '@/layout/MainLayout.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 1. 登录页 (顶级路由，独占全屏)
+    // 1. 登录页 (顶级路由，独占全屏),注册页
     {
       path: '/login',
       name: 'Login',
       component: () => import('@/views/login/index.vue'),
       meta: { title: '登录' }
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: () => import('@/views/register/index.vue'),
+      meta: {title:'注册账号'}
     },
     // 2. 业务页 (包裹在 Layout 中)
     {

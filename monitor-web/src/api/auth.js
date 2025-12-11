@@ -11,10 +11,20 @@ export function login(data) {
     })
 }
 
-// 获取用户信息
-export function getUserInfo() {
+// 注册接口
+export function register(data) {
     return request({
-        url: '/user/profile',
-        method: 'get'
+        url: '/auth/register',
+        method: 'post',
+        data
+    })
+}
+
+// 注销接口
+export function deleteAccount(password) {
+    return request({
+        url: '/user/delete-account',
+        method: 'post',
+        data: { password }
     })
 }

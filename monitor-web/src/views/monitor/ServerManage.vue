@@ -47,7 +47,11 @@
             <el-button type="primary" size="small" plain @click="openDialog(scope.row)">
               <el-icon><Edit /></el-icon> 编辑
             </el-button>
-            <el-button type="danger" size="small" plain @click="handleDelete(scope.row.id)">
+            <el-button type="danger"
+                       size="small"
+                       class="flat-action-btn"
+                       v-permission="['server:delete']"
+                       plain @click="handleDelete(scope.row.id)">
               <el-icon><Delete /></el-icon> 删除
             </el-button>
           </template>

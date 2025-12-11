@@ -1,7 +1,7 @@
 import router from './index'
 import { useUserStore } from '@/stores/user'
 
-const whiteList = ['/login'] // 白名单
+const whiteList = ['/login','/register'] // 白名单
 
 router.beforeEach((to, from, next) => {
     const userStore = useUserStore()

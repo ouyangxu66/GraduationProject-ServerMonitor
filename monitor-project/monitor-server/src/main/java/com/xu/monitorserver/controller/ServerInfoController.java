@@ -84,6 +84,7 @@ public class ServerInfoController {
 
     /**
      * 辅助方法:获取当前登录用户名
+     * 当对服务器进行操作时先验证当前登录用户是否有权限
      */
     private String getCurrentUsername(){
         return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

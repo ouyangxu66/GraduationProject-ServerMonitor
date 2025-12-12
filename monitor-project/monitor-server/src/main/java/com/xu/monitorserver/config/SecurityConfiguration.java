@@ -1,4 +1,4 @@
-package com.xu.monitorserver.config; // 记得确认包名
+package com.xu.monitorserver.config;
 
 import com.xu.monitorserver.filter.JwtAuthenticationTokenFilter;
 import org.springframework.context.annotation.Bean;

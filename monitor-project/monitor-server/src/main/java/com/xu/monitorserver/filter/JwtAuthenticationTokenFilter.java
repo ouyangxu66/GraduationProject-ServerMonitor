@@ -82,6 +82,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 username = jwtUtils.extractUsername(jwt);
             }catch (ExpiredJwtException e){
                 logger.warn("JWT已过期: {}", e.getMessage());
+                //返回给前端401状态码,提示AccessToken已过期
                 response401(response, "Token已过期，请刷新");
                 return; // ⛔ 终止过滤器链，不再往后走
             } catch (Exception e) {

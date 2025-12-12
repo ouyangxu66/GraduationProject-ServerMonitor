@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * JWT工具类，用于生成和管理JSON Web Tokens

@@ -6,8 +6,6 @@ import com.xu.monitorcommon.dto.RegisterDTO;
 import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.service.authservice.IAuthService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController

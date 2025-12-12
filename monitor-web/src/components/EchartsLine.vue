@@ -15,6 +15,10 @@ const props = defineProps({
   height: {
     type: String,
     default: '350px'
+  },
+  color: {
+    type: String,
+    default: '#3498db'
   }
 })
 
@@ -89,14 +93,15 @@ const initChart = () => {
         symbol: 'none', // 去掉折线上的圆点，更极简
         lineStyle: {
           width: 4, // 加粗线条
-          color: '#3498db' // 纯粹的蓝色
+          color:  props.color // 纯粹的蓝色
         },
         areaStyle: {
-          // 极淡的区域填充，或者直接去掉 areaStyle 变成纯折线
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(52, 152, 219, 0.2)' },
-            { offset: 1, color: 'rgba(52, 152, 219, 0)' }
-          ])
+            { offset: 0, color: props.color }, // 使用传入的颜色 (需要转rgba，简单起见可以直接用 props.color，或者用 hexToRgba 工具函数)
+            // 简便写法：直接用 opacity
+            { offset: 0, color: props.color.replace(')', ', 0.2)').replace('rgb', 'rgba') }, // 这里的转换比较复杂，建议直接去掉 areaStyle 或者只用线条色
+          ]),
+          opacity: 0.1 // 简单的透明度
         },
         // 假设后端数据包含 value 或 usage 字段
         data: props.data.map(item => item.usage || item.value || 0)

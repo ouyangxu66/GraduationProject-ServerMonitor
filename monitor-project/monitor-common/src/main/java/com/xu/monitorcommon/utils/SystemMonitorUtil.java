@@ -10,16 +10,14 @@ import oshi.software.os.FileSystem;
 import oshi.software.os.OSFileStore;
 import oshi.software.os.OperatingSystem;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
 import java.text.DecimalFormat;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 系统监控工具类
- * 用于收集系统运行时的各种指标，包括CPU、内存、磁盘和网络使用情况
- */
 public class SystemMonitorUtil {
 
     private static final SystemInfo SI = new SystemInfo();
@@ -27,26 +25,14 @@ public class SystemMonitorUtil {
     private static final OperatingSystem OS = SI.getOperatingSystem();
     private static final DecimalFormat TWO_DECIMAL = new DecimalFormat("#.00");
 
-    /**
-     * 收集系统监控数据
-     * 包括操作系统信息、主机信息、内存使用情况、磁盘使用情况以及CPU和网络流量等指标
-     * 
-     * @return BaseMonitorModel 系统监控数据模型
-     * @throws InterruptedException 当线程在采样间隔中被中断时抛出
-     */
     public static BaseMonitorModel collect() throws InterruptedException {
         BaseMonitorModel model = new BaseMonitorModel();
 
         // 1. 基础信息
         model.setOsName(OS.toString());
-        try {
-            InetAddress localHost = InetAddress.getLocalHost();
-            model.setHostName(localHost.getHostName());
-            model.setIp(localHost.getHostAddress());
-        } catch (UnknownHostException e) {
-            model.setHostName("Unknown");
-            model.setIp("127.0.0.1");
-        }
+        model.setHostName(OS.getNetworkParams().getHostName());
+        // 🟢 核心修改：使用优化后的 IP 获取逻辑
+        model.setIp(getLocalIp());
 
         // 2. 内存信息
         GlobalMemory memory = HAL.getMemory();
@@ -55,7 +41,7 @@ public class SystemMonitorUtil {
         model.setMemoryTotal(parse(totalMem));
         model.setMemoryUsed(parse(usedMem));
 
-        // 3. 磁盘信息 (累加所有分区)
+        // 3. 磁盘信息
         FileSystem fileSystem = OS.getFileSystem();
         List<OSFileStore> fileStores = fileSystem.getFileStores();
         long totalDiskBytes = 0;
@@ -70,24 +56,21 @@ public class SystemMonitorUtil {
         model.setDiskUsed(parse(usedDiskGb));
         model.setDiskUsage(totalDiskGb > 0 ? parse((usedDiskGb / totalDiskGb) * 100) : 0);
 
-        // 4. CPU & 网络流量 (需要采样)
+        // 4. CPU & 网络流量
         CentralProcessor processor = HAL.getProcessor();
         List<NetworkIF> networkIFs = HAL.getNetworkIFs();
 
-        // 4.1 第一次采样
         long[] prevCpuTicks = processor.getSystemCpuLoadTicks();
         long prevRecv = 0;
         long prevSent = 0;
         for (NetworkIF net : networkIFs) {
-            net.updateAttributes(); // 更新网卡状态
+            net.updateAttributes();
             prevRecv += net.getBytesRecv();
             prevSent += net.getBytesSent();
         }
 
-        // --- 休眠 1 秒 ---
         TimeUnit.SECONDS.sleep(1);
 
-        // 4.2 第二次采样
         long[] currCpuTicks = processor.getSystemCpuLoadTicks();
         long currRecv = 0;
         long currSent = 0;
@@ -97,9 +80,7 @@ public class SystemMonitorUtil {
             currSent += net.getBytesSent();
         }
 
-        // 4.3 计算差值
         double cpuLoad = processor.getSystemCpuLoadBetweenTicks(prevCpuTicks) * 100;
-        // 速率 = (第二次总量 - 第一次总量) / 1秒 -> 结果单位 Byte/s -> 转为 KB/s
         double netRecvRate = (currRecv - prevRecv) / 1024.0;
         double netSentRate = (currSent - prevSent) / 1024.0;
 
@@ -110,13 +91,53 @@ public class SystemMonitorUtil {
         return model;
     }
 
-    /**
-     * 将数值格式化为保留两位小数的double值
-     * 
-     * @param val 需要格式化的原始数值
-     * @return double 格式化后的数值
-     */
     private static double parse(double val) {
         return Double.parseDouble(TWO_DECIMAL.format(val));
+    }
+
+    /**
+     * 🟢 智能获取真实 IP
+     * 优先级：192.168 > 10. > 172. (非 Docker)
+     */
+    private static String getLocalIp() {
+        String candidateIp = null;
+        try {
+            Enumeration<NetworkInterface> netInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (netInterfaces.hasMoreElements()) {
+                NetworkInterface ni = netInterfaces.nextElement();
+                String name = ni.getName();
+
+                // 1. 排除回环、虚拟、未启动、Docker 网桥
+                if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()
+                        || name.contains("docker") || name.contains("br-") || name.contains("veth")) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> addresses = ni.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress ip = addresses.nextElement();
+                    if (ip instanceof Inet4Address) {
+                        String ipStr = ip.getHostAddress();
+
+                        // 2. 优先返回 192.168 开头的 (最常见的局域网 IP)
+                        if (ipStr.startsWith("192.168")) {
+                            return ipStr;
+                        }
+                        // 3. 其次返回 10. 开头的
+                        if (ipStr.startsWith("10.")) {
+                            return ipStr;
+                        }
+                        // 4. 暂存其他 IP (如 172.x，但要在最后才用)
+                        if (candidateIp == null) {
+                            candidateIp = ipStr;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 如果没找到 192.168 或 10. 的，就返回暂存的，最后兜底 127.0.0.1
+        return candidateIp != null ? candidateIp : "127.0.0.1";
     }
 }

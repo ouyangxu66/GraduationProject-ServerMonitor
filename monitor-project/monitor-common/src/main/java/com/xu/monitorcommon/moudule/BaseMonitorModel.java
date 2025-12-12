@@ -13,6 +13,15 @@ public class BaseMonitorModel {
     private double memoryTotal; // 内存总量 (GB)
     private double memoryUsed;  // 内存已用 (GB)
 
+    // 磁盘信息
+    private double diskTotal;   // 磁盘总量 (GB)
+    private double diskUsed;    // 磁盘已用 (GB)
+    private double diskUsage;   // 磁盘使用率 (%)
+
+    // 网络信息 (速率)
+    private double netRecvRate; // 下行速率 (KB/s)
+    private double netSentRate; // 上行速率 (KB/s)
+
     public String getOsName() {
         return osName;
     }
@@ -61,5 +70,43 @@ public class BaseMonitorModel {
         this.memoryUsed = memoryUsed;
     }
 
-// 我们暂时先不搞磁盘和网络，先把这几个最核心的跑通
+    public double getDiskTotal() {
+        return diskTotal;
+    }
+
+    public void setDiskTotal(double diskTotal) {
+        this.diskTotal = diskTotal;
+    }
+
+    public double getDiskUsed() {
+        return diskUsed;
+    }
+
+    public void setDiskUsed(double diskUsed) {
+        this.diskUsed = diskUsed;
+    }
+
+    public double getDiskUsage() {
+        return diskUsage;
+    }
+
+    public void setDiskUsage(double diskUsage) {
+        this.diskUsage = diskUsage;
+    }
+
+    public double getNetRecvRate() {
+        return netRecvRate;
+    }
+
+    public void setNetRecvRate(double netRecvRate) {
+        this.netRecvRate = netRecvRate;
+    }
+
+    public double getNetSentRate() {
+        return netSentRate;
+    }
+
+    public void setNetSentRate(double netSentRate) {
+        this.netSentRate = netSentRate;
+    }
 }

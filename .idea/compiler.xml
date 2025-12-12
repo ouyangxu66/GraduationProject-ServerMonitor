@@ -7,8 +7,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="monitor-client" />
-        <module name="monitor-common" />
         <module name="monitor-server" />
+        <module name="monitor-web" />
+        <module name="monitor-common" />
       </profile>
     </annotationProcessing>
   </component>

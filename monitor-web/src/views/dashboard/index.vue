@@ -26,24 +26,25 @@
       </div>
 
       <div class="right-tools">
-        <!-- 🟢 新增：清空数据按钮 -->
         <el-button type="danger" plain size="large" class="action-btn" @click="handleClearData">
           <el-icon style="margin-right: 5px"><Delete /></el-icon> 清空数据
         </el-button>
-        <el-button type="primary" size="large" class="action-btn" @click="loadData" :loading="loading">
+        <el-button type="primary" size="large" class="action-btn" @click="loadChartsData" :loading="loading">
           <el-icon style="margin-right: 5px"><Refresh /></el-icon> 刷新数据
         </el-button>
       </div>
     </div>
 
-    <!-- 🟢 新增：服务器基础信息卡片 -->
+    <!-- 2. 基础信息卡片 -->
     <div class="info-card flat-card" v-if="serverInfo.ip">
-      <div class="info-item">
+      <div class="info-item os-item">
         <div class="info-label">操作系统</div>
-        <div class="info-value">
-          <el-icon><Platform /></el-icon> {{ serverInfo.osName || 'Unknown' }}
+        <div class="info-value hover-expand">
+          <el-icon style="margin-right: 5px; flex-shrink: 0;"><Platform /></el-icon>
+          <span class="os-text">{{ serverInfo.osName || 'Unknown' }}</span>
         </div>
       </div>
+
       <div class="info-item">
         <div class="info-label">主机名称</div>
         <div class="info-value">{{ serverInfo.hostName || 'Unknown' }}</div>
@@ -62,37 +63,49 @@
       </div>
     </div>
 
-    <!-- 数据图表区域 -->
+    <!-- 3. 数据图表区域 -->
     <div class="chart-grid">
-      <!-- Chart 1: CPU -->
+      <!-- CPU 监控 -->
       <div class="flat-card">
         <div class="card-header">
           <div class="title-area">
             <el-icon class="card-icon" style="background: rgba(52, 152, 219, 0.1); color: #3498db;"><Cpu /></el-icon>
-            <h3>CPU 负载监控</h3>
+            <h3>CPU 负载监控 (%)</h3>
           </div>
           <el-tag type="success" effect="dark" round>Live</el-tag>
         </div>
         <div class="card-body">
-          <EchartsLine :data="cpuData" height="300px" color="#3498db" />
+          <EchartsLine
+              :data="cpuData"
+              height="300px"
+              color="#3498db"
+              series-name="CPU使用率"
+              unit="%"
+          />
         </div>
       </div>
 
-      <!-- 🟢 Chart 2: 磁盘使用率 -->
+      <!-- 磁盘监控 -->
       <div class="flat-card">
         <div class="card-header">
           <div class="title-area">
             <el-icon class="card-icon" style="background: rgba(155, 89, 182, 0.1); color: #9b59b6;"><Files /></el-icon>
-            <h3>磁盘使用率</h3>
+            <h3>磁盘使用率 (%)</h3>
           </div>
           <el-tag type="warning" effect="dark" round>Storage</el-tag>
         </div>
         <div class="card-body">
-          <EchartsLine :data="diskData" height="300px" color="#9b59b6" />
+          <EchartsLine
+              :data="diskData"
+              height="300px"
+              color="#9b59b6"
+              series-name="磁盘使用率"
+              unit="%"
+          />
         </div>
       </div>
 
-      <!-- 🟢 Chart 3: 网络速率 -->
+      <!-- 网络监控 -->
       <div class="flat-card full-width">
         <div class="card-header">
           <div class="title-area">
@@ -102,7 +115,13 @@
           <el-tag type="info" effect="dark" round>Network</el-tag>
         </div>
         <div class="card-body">
-          <EchartsLine :data="networkData" height="300px" color="#2ecc71" />
+          <EchartsLine
+              :data="networkData"
+              height="300px"
+              color="#2ecc71"
+              series-name="网络下载速率"
+              unit="KB/s"
+          />
         </div>
       </div>
     </div>
@@ -110,82 +129,69 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, reactive } from 'vue'
-import { getCpuHistory, getServerList } from '@/api/monitor.js'
+import {ref, onMounted, onBeforeUnmount, reactive} from 'vue'
+import {getCpuHistory, getDiskHistory, getNetHistory, getServerBaseInfo, getServerList} from '@/api/monitor.js'
 import EchartsLine from '@/components/EchartsLine.vue'
-import { ElMessage } from 'element-plus'
-import { Refresh, Delete, Cpu, Platform, Files, Connection } from '@element-plus/icons-vue'
+import {ElMessage} from 'element-plus'
+import {Refresh, Delete, Cpu, Platform, Files, Connection} from '@element-plus/icons-vue'
 
 const serverList = ref([])
 const currentServerIp = ref('')
 const loading = ref(false)
 let timer = null
+const clearTime = ref(0)
 
-// --- 数据状态定义 ---
 const cpuData = ref([])
 const diskData = ref([])
 const networkData = ref([])
 
-// 服务器基础信息
+// 基础信息
 const serverInfo = reactive({
-  osName: '',
-  hostName: '',
-  ip: '',
-  memoryTotal: 0,
-  diskTotal: 0
+  osName: '', hostName: '', ip: '', memoryTotal: 0, diskTotal: 0
 })
 
-// 1. 初始化加载
+// 初始化
 const init = async () => {
   try {
     const res = await getServerList()
     const list = Array.isArray(res) ? res : (res.data || [])
-
     if (list.length > 0) {
       serverList.value = list
       currentServerIp.value = list[0].ip
       startPolling()
     } else {
-      ElMessage.warning('暂无服务器，请先在服务器管理中添加')
+      ElMessage.warning('暂无服务器')
     }
   } catch (e) {
     console.error(e)
   }
 }
 
-// 2. 加载核心数据
-const loadData = async () => {
+// 加载基础信息
+const loadBaseInfo = async () => {
+  if (!currentServerIp.value) return
+  try {
+    const res = await getServerBaseInfo({ip: currentServerIp.value})
+    const info = res.data || res || {}
+    Object.assign(serverInfo, info)
+    serverInfo.ip = currentServerIp.value
+  } catch (e) {
+  }
+}
+
+// 加载图表数据
+const loadChartsData = async () => {
   if (!currentServerIp.value) return
   loading.value = true
   try {
-    const res = await getCpuHistory({ ip: currentServerIp.value })
-
-    // 兼容处理
-    const rawData = Array.isArray(res) ? res : (res.data || [])
-
-    if (rawData.length > 0) {
-      // 🟢 1. 修复图表数据映射
-      // 后端返回的是 "value" 字段，不是 "cpuLoad"
-      cpuData.value = mapData(rawData, 'value')
-
-      // ⚠️ 注意：目前的接口 /cpu-history 只返回了 CPU 数据
-      // 所以磁盘和网络图表暂时没有数据，为了防止报错，我们先置空
-      // 后续需要在后端写专门的 getDiskHistory 和 getNetHistory 接口
-      diskData.value = []
-      networkData.value = []
-
-      // 🟢 2. 尝试获取基础信息 (如果有的话)
-      // 由于目前的 time-series 接口只返回 time 和 value，这里可能拿不到 info
-      // 建议后续单独写一个 /api/server/info 接口来获取这些静态信息
-      // 这里先做一个简单的容错处理
-      const latest = rawData[rawData.length - 1]
-      // 只有当字段存在时才更新，避免把 'Unknown' 覆盖成 undefined
-      if (latest.osName) serverInfo.osName = latest.osName
-      if (latest.hostName) serverInfo.hostName = latest.hostName
-      if (latest.memoryTotal) serverInfo.memoryTotal = latest.memoryTotal
-      if (latest.diskTotal) serverInfo.diskTotal = latest.diskTotal
-      serverInfo.ip = currentServerIp.value
-    }
+    const [cpuRes, diskRes, netRes] = await Promise.all([
+      getCpuHistory({ip: currentServerIp.value}),
+      getDiskHistory({ip: currentServerIp.value}),
+      getNetHistory({ip: currentServerIp.value})
+    ])
+    cpuData.value = processData(cpuRes)
+    diskData.value = processData(diskRes)
+    networkData.value = processData(netRes)
   } catch (e) {
     console.error(e)
   } finally {
@@ -193,45 +199,46 @@ const loadData = async () => {
   }
 }
 
-// 辅助函数：映射数据
-const mapData = (list, key) => {
-  return list.map(item => ({
-    time: new Date(item.createTime || item.time).toLocaleTimeString('zh-CN', { hour12: false }),
-    value: item[key] // 动态获取 value (cpuLoad, diskUsage 等)
-  }))
+// 处理数据
+const processData = (res) => {
+  const list = Array.isArray(res) ? res : (res.data || [])
+  return list
+      .filter(item => new Date(item.time).getTime() > clearTime.value)
+      .map(item => ({
+        time: new Date(item.time).toLocaleTimeString('zh-CN', {hour12: false}),
+        value: item.value
+      }))
 }
 
-// 3. 🟢 需求2：清空数据
-const handleClearData = () => {
-  cpuData.value = []
-  diskData.value = []
-  networkData.value = []
-  // 也可以选择是否重置基础信息
-  // Object.keys(serverInfo).forEach(k => serverInfo[k] = '')
-  ElMessage.success('当前视图数据已清空')
-  // 重新加载一次最新数据
-  loadData()
-}
-
-// 4. 轮询逻辑
+// 开始轮询
 const startPolling = () => {
-  loadData()
+  loadBaseInfo()
+  loadChartsData()
   if (timer) clearInterval(timer)
-  timer = setInterval(loadData, 5000)
+  timer = setInterval(loadChartsData, 5000)
 }
 
+// 切换服务器
 const handleServerChange = () => {
-  // 切换服务器时先清空旧图表，防止数据混淆
+  clearTime.value = 0
   cpuData.value = []
   diskData.value = []
   networkData.value = []
-  loadData()
+  startPolling()
 }
 
-onMounted(() => {
-  init()
-})
+// 清空数据
+const handleClearData = () => {
+  clearTime.value = Date.now()
+  cpuData.value = []
+  diskData.value = []
+  networkData.value = []
+  ElMessage.success('已清空历史记录，将重新绘制')
+  loadChartsData()
+}
 
+// 页面加载时初始化
+onMounted(() => init())
 onBeforeUnmount(() => {
   if (timer) clearInterval(timer)
 })
@@ -243,7 +250,6 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* --- 工具栏 --- */
 .toolbar {
   display: flex;
   align-items: center;
@@ -276,11 +282,10 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
-/* --- 🟢 基础信息卡片 --- */
 .info-card {
   display: flex;
   justify-content: space-around;
-  align-items: center;
+  align-items: flex-start; /* 顶部对齐，防止展开时高度跳动 */
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 20px;
@@ -289,6 +294,11 @@ onBeforeUnmount(() => {
 .info-item {
   text-align: center;
   min-width: 120px;
+}
+
+/* 🟢 需求1 实现：操作系统栏 */
+.os-item {
+  max-width: 300px; /* 限制最大宽度 */
 }
 
 .info-label {
@@ -307,22 +317,43 @@ onBeforeUnmount(() => {
   gap: 5px;
 }
 
+/* 🟢 交互逻辑：默认截断，悬停展开 */
+.os-text {
+  display: inline-block;
+  max-width: 200px; /* 默认最大宽度 */
+  white-space: nowrap; /* 不换行 */
+  overflow: hidden; /* 隐藏溢出 */
+  text-overflow: ellipsis; /* 显示省略号 */
+  vertical-align: bottom;
+  transition: all 0.3s ease; /* 平滑动画 */
+  border-radius: 4px;
+}
+
+.hover-expand:hover .os-text {
+  max-width: none; /* 取消宽度限制 */
+  white-space: normal; /* 允许换行 */
+  overflow: visible; /* 显示全部 */
+  background-color: var(--el-fill-color); /* 加个底色突出显示 */
+  padding: 0 5px;
+  position: relative;
+  z-index: 10;
+}
+
 .info-value.highlight {
   color: var(--el-color-primary);
 }
 
-/* --- 图表网格 --- */
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 两列布局 */
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
 
 .full-width {
-  grid-column: span 2; /* 网络监控占满一行 */
+  grid-column: span 2;
 }
 
-/* --- 扁平卡片通用样式 --- */
+/* 扁平卡片通用 */
 .flat-card {
   background: var(--el-bg-color);
   border: 2px solid var(--el-border-color-light);
@@ -359,11 +390,11 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-primary);
 }
 
-/* 响应式调整 */
 @media (max-width: 1000px) {
   .chart-grid {
-    grid-template-columns: 1fr; /* 小屏幕单列 */
+    grid-template-columns: 1fr;
   }
+
   .full-width {
     grid-column: span 1;
   }

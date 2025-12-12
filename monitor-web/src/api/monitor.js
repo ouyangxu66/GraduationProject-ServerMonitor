@@ -12,6 +12,33 @@ export const getCpuHistory = (params) => {
     })
 }
 
+// 获取 磁盘 历史数据
+export const getDiskHistory = (params) => {
+    return request({
+        url: '/monitor/disk-history',
+        method: 'get',
+        params
+    })
+}
+
+// 获取 网络 历史数据
+export const getNetHistory = (params) => {
+    return request({
+        url: '/monitor/net-history',
+        method: 'get',
+        params
+    })
+}
+
+// 获取服务器基础信息
+export const getServerBaseInfo = (params) => {
+    return request({
+        url: '/monitor/base-info',
+        method: 'get',
+        params
+    })
+}
+
 // ===========================
 //  Server 服务器管理接口
 // ===========================

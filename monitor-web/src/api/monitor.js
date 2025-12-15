@@ -39,6 +39,15 @@ export const getServerBaseInfo = (params) => {
     })
 }
 
+// 获取服务器负载历史数据
+export const getSystemLoadHistory = (params) => {
+    return request({
+        url: '/monitor/load-history',
+        method: 'get',
+        params
+    })
+}
+
 // ===========================
 //  Server 服务器管理接口
 // ===========================

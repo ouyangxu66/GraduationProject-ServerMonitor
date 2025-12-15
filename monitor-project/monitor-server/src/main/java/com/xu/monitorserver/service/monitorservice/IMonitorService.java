@@ -18,4 +18,6 @@ public interface IMonitorService {
 
     // 获取服务器基础信息
     Map<String, Object> getServerLatestInfo(String ip);
+
+    Map<String, Object> getSystemLoadHistory(String ip);
 }

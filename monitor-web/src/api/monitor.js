@@ -47,6 +47,13 @@ export const getSystemLoadHistory = (params) => {
         params
     })
 }
+// 获取磁盘IO历史数据
+export const getDiskIoHistory = (params) => {
+    return request({
+        url: '/monitor/disk-io-history',
+        method: 'get',
+        params })
+}
 
 // ===========================
 //  Server 服务器管理接口

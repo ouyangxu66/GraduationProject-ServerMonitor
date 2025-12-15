@@ -30,6 +30,15 @@ public class BaseMonitorModel {
     // 系统运行时间
     private long upTime;
 
+    // 磁盘I/O速率(KB/s)
+    private double diskReadRate;
+    private double diskWriteRate;
+
+    //  Top 5 进程 (JSON 字符串形式存储)
+    private String topProcessesJson;
+    // 辅助字段：仅用于传输，不存数据库,为了方便，我们在 Util 里直接转 JSON存入上面的String
+
+
     public String getOsName() {
         return osName;
     }
@@ -148,5 +157,29 @@ public class BaseMonitorModel {
 
     public void setUpTime(long upTime) {
         this.upTime = upTime;
+    }
+
+    public double getDiskReadRate() {
+        return diskReadRate;
+    }
+
+    public void setDiskReadRate(double diskReadRate) {
+        this.diskReadRate = diskReadRate;
+    }
+
+    public double getDiskWriteRate() {
+        return diskWriteRate;
+    }
+
+    public void setDiskWriteRate(double diskWriteRate) {
+        this.diskWriteRate = diskWriteRate;
+    }
+
+    public String getTopProcessesJson() {
+        return topProcessesJson;
+    }
+
+    public void setTopProcessesJson(String topProcessesJson) {
+        this.topProcessesJson = topProcessesJson;
     }
 }

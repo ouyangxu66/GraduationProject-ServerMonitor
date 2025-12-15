@@ -64,6 +64,8 @@ public class MonitorController {
      */
     @GetMapping("/base-info")
     public R<Map<String,Object>> getBaseInfo(@RequestParam("ip") String ip){
+        // 进程列表通常不需要历史数据，直接从 /base-info 获取最新一条即可
+        // 因为 /base-info 调用的是 queryLastOne，它已经包含了 top_processes 字段
         return R.ok(monitorService.getServerLatestInfo(ip));
     }
 
@@ -75,4 +77,14 @@ public class MonitorController {
     public R<Map<String,Object>> getSystemLoadHistory(@RequestParam("ip") String ip){
         return R.ok(monitorService.getSystemLoadHistory(ip));
     }
+
+    /**
+     * 获取磁盘IO历史数据
+     * 前端: getDiskIoHistory({ ip: '...' })
+     */
+    @GetMapping("/disk-io-history")
+    public R<Map<String,Object>> getDiskIoHistory(@RequestParam("ip") String ip){
+        return R.ok(monitorService.getDiskIoHistory(ip));
+    }
+
 }

@@ -58,4 +58,13 @@ public class MonitorServiceImpl implements IMonitorService {
 
         return result;
     }
+
+    @Override
+    public Map<String, Object> getDiskIoHistory(String ip) {
+        // 查询 disk_read_rate, disk_write_rate 字段
+        Map<String, Object> result = new HashMap<>();
+        result.put("read", influxRepository.queryHistory(ip, "disk_read_rate"));
+        result.put("write", influxRepository.queryHistory(ip, "disk_write_rate"));
+        return result;
+    }
 }

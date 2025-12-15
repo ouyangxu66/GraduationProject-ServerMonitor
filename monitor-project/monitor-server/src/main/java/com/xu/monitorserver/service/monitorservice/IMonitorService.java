@@ -20,4 +20,6 @@ public interface IMonitorService {
     Map<String, Object> getServerLatestInfo(String ip);
 
     Map<String, Object> getSystemLoadHistory(String ip);
+
+    Map<String, Object> getDiskIoHistory(String ip);
 }

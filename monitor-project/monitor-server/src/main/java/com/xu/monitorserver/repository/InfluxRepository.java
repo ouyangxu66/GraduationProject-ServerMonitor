@@ -67,11 +67,17 @@ public class InfluxRepository {
                 .addField("sys_load_1", model.getSystemLoad1())
                 .addField("sys_load_5", model.getSystemLoad5())
                 .addField("sys_load_15", model.getSystemLoad15())
-                .addField("up_time", model.getUpTime()) // 注意：数据库里存的是下划线 up_time
+                .addField("up_time", model.getUpTime())
+                // 磁盘I/O速率与Top5进程列表
+                .addField("disk_read_rate", model.getDiskReadRate())
+                .addField("disk_write_rate", model.getDiskWriteRate())
+                .addField("top_processes", model.getTopProcessesJson() !=null
+                ?model.getTopProcessesJson():"[]")
 
                 // 时间戳：使用当前服务器时间
                 .time(Instant.now(), WritePrecision.NS);
 
+        System.out.println(model.getTopProcessesJson());
         // 执行写入
         writeApi.writePoint(bucket, org, point);
     }
@@ -156,6 +162,7 @@ public class InfluxRepository {
                 if ("disk_total".equals(key)) info.put("diskTotal", val);
                 // 数据库是 "up_time" -> 前端要 "uptime"
                 if ("up_time".equals(key)) info.put("uptime", val);
+                if ("top_processes".equals(key)) info.put("topProcesses", val);
             }
         }
         return info;

@@ -4,6 +4,7 @@ import com.xu.monitorcommon.moudule.BaseMonitorModel;
 import com.xu.monitorserver.repository.InfluxRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,18 @@ public class MonitorServiceImpl implements IMonitorService {
 
     @Override
     public Map<String, Object> getServerLatestInfo(String ip) {
+        // 调用 Repository 查询最新一条数据
         return influxRepository.queryLastOne(ip);
+    }
+
+    @Override
+    public Map<String, Object> getSystemLoadHistory(String ip){
+        // 查询 sys_load_1, sys_load_5, sys_load_15 字段,
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("load1",influxRepository.queryHistory(ip, "sys_load_1"));
+        result.put("load5",influxRepository.queryHistory(ip, "sys_load_5"));
+        result.put("load15",influxRepository.queryHistory(ip, "sys_load_15"));
+
+        return result;
     }
 }

@@ -84,19 +84,30 @@ public class SystemMonitorUtil {
         double netRecvRate = (currRecv - prevRecv) / 1024.0;
         double netSentRate = (currSent - prevSent) / 1024.0;
 
+        //5.获取系统负载(返回一个数组,分别对应1min,5min,15min)
+        double[] loads = HAL.getProcessor().getSystemLoadAverage(3);
+
+        // 设置模型参数
+        model.setSystemLoad1(formatLoad(loads[0]));
+        model.setSystemLoad5(formatLoad(loads[1]));
+        model.setSystemLoad15(formatLoad(loads[2]));
         model.setCpuLoad(parse(cpuLoad));
         model.setNetRecvRate(parse(netRecvRate));
         model.setNetSentRate(parse(netSentRate));
+        model.setUpTime(OS.getSystemUptime());
 
         return model;
     }
 
+    /**
+     *辅助方法:获取小数点后两位
+     */
     private static double parse(double val) {
         return Double.parseDouble(TWO_DECIMAL.format(val));
     }
 
     /**
-     * 🟢 智能获取真实 IP
+     * 辅助方法:智能获取真实 IP
      * 优先级：192.168 > 10. > 172. (非 Docker)
      */
     private static String getLocalIp() {
@@ -139,5 +150,12 @@ public class SystemMonitorUtil {
         }
         // 如果没找到 192.168 或 10. 的，就返回暂存的，最后兜底 127.0.0.1
         return candidateIp != null ? candidateIp : "127.0.0.1";
+    }
+
+    /**
+     * 辅助方法：处理负载数值，防止 Windows 返回负数
+     */
+    private static double formatLoad(double val) {
+        return val < 0 ? 0.0 : Double.parseDouble(TWO_DECIMAL.format(val));
     }
 }

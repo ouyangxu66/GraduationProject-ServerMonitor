@@ -22,6 +22,14 @@ public class BaseMonitorModel {
     private double netRecvRate; // 下行速率 (KB/s)
     private double netSentRate; // 上行速率 (KB/s)
 
+    //  系统负载(1分钟,5分钟,15分钟)
+    private double systemLoad1;
+    private double systemLoad5;
+    private double systemLoad15;
+
+    // 系统运行时间
+    private long upTime;
+
     public String getOsName() {
         return osName;
     }
@@ -108,5 +116,37 @@ public class BaseMonitorModel {
 
     public void setNetSentRate(double netSentRate) {
         this.netSentRate = netSentRate;
+    }
+
+    public double getSystemLoad1() {
+        return systemLoad1;
+    }
+
+    public void setSystemLoad1(double systemLoad1) {
+        this.systemLoad1 = systemLoad1;
+    }
+
+    public double getSystemLoad5() {
+        return systemLoad5;
+    }
+
+    public void setSystemLoad5(double systemLoad5) {
+        this.systemLoad5 = systemLoad5;
+    }
+
+    public double getSystemLoad15() {
+        return systemLoad15;
+    }
+
+    public void setSystemLoad15(double systemLoad15) {
+        this.systemLoad15 = systemLoad15;
+    }
+
+    public long getUpTime() {
+        return upTime;
+    }
+
+    public void setUpTime(long upTime) {
+        this.upTime = upTime;
     }
 }

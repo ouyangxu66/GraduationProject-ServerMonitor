@@ -66,4 +66,13 @@ public class MonitorController {
     public R<Map<String,Object>> getBaseInfo(@RequestParam("ip") String ip){
         return R.ok(monitorService.getServerLatestInfo(ip));
     }
+
+    /**
+     * 获取服务器系统负载历史数据
+     * 前端: getSystemHistory({ ip: '...' })
+     */
+    @GetMapping("/load-history")
+    public R<Map<String,Object>> getSystemLoadHistory(@RequestParam("ip") String ip){
+        return R.ok(monitorService.getSystemLoadHistory(ip));
+    }
 }

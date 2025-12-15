@@ -77,7 +77,6 @@ public class InfluxRepository {
                 // 时间戳：使用当前服务器时间
                 .time(Instant.now(), WritePrecision.NS);
 
-        System.out.println(model.getTopProcessesJson());
         // 执行写入
         writeApi.writePoint(bucket, org, point);
     }

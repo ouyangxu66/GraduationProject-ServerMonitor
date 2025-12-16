@@ -9,20 +9,17 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-// 🟢 确保路径前缀是 /api/monitor
 @RequestMapping("/api/monitor")
 public class MonitorController {
 
     private final IMonitorService monitorService;
 
-    // 推荐使用构造器注入，并设为 final
     public MonitorController(IMonitorService monitorService){
         this.monitorService = monitorService;
     }
 
     /**
-     * 接收探针上报的数据
-     * Client端配置: monitor.server-url=http://ip:port/api/monitor/report
+     * 上报数据
      */
     @PostMapping("/report")
     public R<Void> report(@RequestBody BaseMonitorModel data) {
@@ -31,60 +28,74 @@ public class MonitorController {
     }
 
     /**
-     * 获取 CPU 历史数据
-     * 前端: getCpuHistory({ ip: '...' })
+     * 获取CPU负载历史数据
      */
     @GetMapping("/cpu-history")
-    public R<List<Map<String,Object>>> getCpuHistory(@RequestParam("ip") String ip){
-        // 🟢 传入 IP 参数
-        return R.ok(monitorService.getCpuHistory(ip));
+    public R<List<Map<String,Object>>> getCpuHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getCpuHistory(ip, start, end));
     }
 
     /**
-     * 获取 磁盘 历史数据
-     * 前端: getDiskHistory({ ip: '...' })
+     * 获取磁盘使用率历史数据
      */
     @GetMapping("/disk-history")
-    public R<List<Map<String,Object>>> getDiskHistory(@RequestParam("ip") String ip){
-        return R.ok(monitorService.getDiskHistory(ip));
+    public R<List<Map<String,Object>>> getDiskHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getDiskHistory(ip, start, end));
     }
 
     /**
-     * 获取 网络 历史数据
-     * 前端: getNetHistory({ ip: '...' })
+     * 获取网络流量历史数据
      */
     @GetMapping("/net-history")
-    public R<List<Map<String,Object>>> getNetHistory(@RequestParam("ip") String ip){
-        return R.ok(monitorService.getNetHistory(ip));
+    public R<List<Map<String,Object>>> getNetHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getNetHistory(ip, start, end));
     }
 
-    /**
-     * 获取服务器基础信息 (OS, HostName, TotalMem 等)
-     * 前端: getServerBaseInfo({ ip: '...' })
-     */
+    // 🟢 修复：基础信息不需要时间范围
     @GetMapping("/base-info")
     public R<Map<String,Object>> getBaseInfo(@RequestParam("ip") String ip){
-        // 进程列表通常不需要历史数据，直接从 /base-info 获取最新一条即可
-        // 因为 /base-info 调用的是 queryLastOne，它已经包含了 top_processes 字段
         return R.ok(monitorService.getServerLatestInfo(ip));
     }
 
     /**
-     * 获取服务器系统负载历史数据
-     * 前端: getSystemHistory({ ip: '...' })
+     * 获取系统负载历史数据
      */
     @GetMapping("/load-history")
-    public R<Map<String,Object>> getSystemLoadHistory(@RequestParam("ip") String ip){
-        return R.ok(monitorService.getSystemLoadHistory(ip));
+    public R<Map<String,Object>> getSystemLoadHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getSystemLoadHistory(ip, start, end));
     }
 
     /**
      * 获取磁盘IO历史数据
-     * 前端: getDiskIoHistory({ ip: '...' })
      */
     @GetMapping("/disk-io-history")
-    public R<Map<String,Object>> getDiskIoHistory(@RequestParam("ip") String ip){
-        return R.ok(monitorService.getDiskIoHistory(ip));
+    public R<Map<String,Object>> getDiskIoHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getDiskIoHistory(ip, start, end));
     }
 
+    /**
+     * 获取CPU温度历史数据
+     */
+    @GetMapping("/temp-history")
+    public R<List<Map<String,Object>>> getTempHistory(
+            @RequestParam("ip") String ip,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end){
+        return R.ok(monitorService.getTempHistory(ip, start, end));
+    }
 }

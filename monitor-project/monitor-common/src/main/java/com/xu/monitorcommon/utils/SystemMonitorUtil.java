@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xu.monitorcommon.moudule.BaseMonitorModel;
 import com.xu.monitorcommon.moudule.ProcessModel;
 import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
-import oshi.hardware.GlobalMemory;
-import oshi.hardware.HWDiskStore;
-import oshi.hardware.HardwareAbstractionLayer;
-import oshi.hardware.NetworkIF;
+import oshi.hardware.*;
 import oshi.software.os.FileSystem;
 import oshi.software.os.OSFileStore;
 import oshi.software.os.OSProcess;
@@ -161,6 +157,11 @@ public class SystemMonitorUtil {
         } catch (Exception e) {
             model.setTopProcessesJson("[]");
         }
+
+        //7.采集CPU温度
+        Sensors sensors = HAL.getSensors();
+        double cpuTemperature = sensors.getCpuTemperature();
+        model.setCpuTemperature(cpuTemperature);
 
         return model;
     }

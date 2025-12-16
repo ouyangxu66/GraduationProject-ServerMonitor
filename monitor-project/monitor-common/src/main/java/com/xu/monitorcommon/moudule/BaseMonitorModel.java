@@ -38,6 +38,8 @@ public class BaseMonitorModel {
     private String topProcessesJson;
     // 辅助字段：仅用于传输，不存数据库,为了方便，我们在 Util 里直接转 JSON存入上面的String
 
+    //CPU温度
+    private double cpuTemperature;
 
     public String getOsName() {
         return osName;
@@ -181,5 +183,13 @@ public class BaseMonitorModel {
 
     public void setTopProcessesJson(String topProcessesJson) {
         this.topProcessesJson = topProcessesJson;
+    }
+
+    public double getCpuTemperature() {
+        return cpuTemperature;
+    }
+
+    public void setCpuTemperature(double cpuTemperature) {
+        this.cpuTemperature = cpuTemperature;
     }
 }

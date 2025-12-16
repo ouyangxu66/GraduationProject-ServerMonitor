@@ -73,6 +73,8 @@ public class InfluxRepository {
                 .addField("disk_write_rate", model.getDiskWriteRate())
                 .addField("top_processes", model.getTopProcessesJson() !=null
                 ?model.getTopProcessesJson():"[]")
+                // CPU温度
+                .addField("cpu_temp",model.getCpuTemperature())
 
                 // 时间戳：使用当前服务器时间
                 .time(Instant.now(), WritePrecision.NS);
@@ -82,39 +84,34 @@ public class InfluxRepository {
     }
 
     /**
-     * 查询历史趋势数据 (Query History)
-     * 用于前端绘制折线图
-     * @param ip 服务器IP
-     * @param field 数据库中的字段名 (如 cpu_load, disk_usage)
-     * @return List [{time: "...", value: 12.5}, ...]
+     * 通用查询历史数据 (支持动态时间)
+     * @param start 开始时间 (ISO格式, 如 "-1h" 或 "2025-12-16T10:00:00Z")
+     * @param end   结束时间 (ISO格式, 如 "now()" 或 "2025-12-16T12:00:00Z")
      */
-    public List<Map<String, Object>> queryHistory(String ip, String field) {
-        // 构造 Flux 查询语句
-        // 1. 指定 Bucket
-        // 2. range: 查询过去 1 小时
-        // 3. filter: 筛选表、IP、字段
-        // 4. aggregateWindow: 降采样，每 10 秒取一个平均值，防止数据点过多
+    public List<Map<String, Object>> queryHistory(String ip, String field, String start, String end) {
+        // 如果没传时间，默认查过去 1 小时
+        String rangeStart = (start == null || start.isEmpty()) ? "-1h" : start;
+        String rangeStop = (end == null || end.isEmpty()) ? "now()" : end;
+
         String flux = String.format(
                 "from(bucket: \"%s\") " +
-                        "|> range(start: -1h) " +
+                        "|> range(start: %s, stop: %s) " + // 🟢 动态注入 start 和 stop
                         "|> filter(fn: (r) => r[\"_measurement\"] == \"server_status\") " +
                         "|> filter(fn: (r) => r[\"ip\"] == \"%s\") " +
                         "|> filter(fn: (r) => r[\"_field\"] == \"%s\") " +
                         "|> aggregateWindow(every: 10s, fn: mean, createEmpty: false) " +
                         "|> yield(name: \"mean\")",
-                bucket, ip, field
+                bucket, rangeStart, rangeStop, ip, field
         );
 
-        // 执行查询
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux, org);
         List<Map<String, Object>> result = new ArrayList<>();
 
-        // 解析结果：InfluxDB 返回的是 Table -> Record 结构
         for (FluxTable table : tables) {
             for (FluxRecord record : table.getRecords()) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("time", record.getTime().toString()); // ISO 时间格式
-                map.put("value", record.getValue());          // 数值
+                map.put("time", record.getTime().toString());
+                map.put("value", record.getValue());
                 result.add(map);
             }
         }
@@ -124,6 +121,7 @@ public class InfluxRepository {
     /**
      * 查询服务器最新基础信息 (Query Latest Info)
      * 用于前端顶部的基础信息卡片
+     *
      * @param ip 服务器IP
      * @return Map { osName: "...", uptime: 12345, ... }
      */

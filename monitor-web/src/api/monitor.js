@@ -55,6 +55,13 @@ export const getDiskIoHistory = (params) => {
         params })
 }
 
+export const getTempHistory = (params) => {
+    return request({
+        url: '/monitor/temp-history',
+        method: 'get',
+        params
+    })
+}
 // ===========================
 //  Server 服务器管理接口
 // ===========================

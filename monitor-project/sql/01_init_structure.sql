@@ -28,7 +28,7 @@ VALUES ('admin', '$2a$10$7JB720yubVSZv5Wqt6y96.R7.x.a1s2d3f4g5h6j7k8l9', 'ROLE_A
 -- ----------------------------
 -- 2. 创建服务器列表表
 -- ----------------------------
-DROP TABLE IF EXISTS `sys_server`;
+DROP TABLE IF EXISTS `server_info`;
 CREATE TABLE `sys_server` (
                               `id` bigint NOT NULL AUTO_INCREMENT,
                               `name` varchar(64) NOT NULL COMMENT '服务器名称',

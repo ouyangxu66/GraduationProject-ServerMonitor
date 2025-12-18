@@ -79,7 +79,6 @@
         <module>monitor-common</module>
         <module>monitor-client</module>
         <module>monitor-server</module>
-        <module>monitor-web</module>
     </modules>
 
     <!--

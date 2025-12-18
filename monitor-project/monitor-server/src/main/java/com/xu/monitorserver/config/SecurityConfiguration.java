@@ -45,6 +45,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST,"/api/auth/register").permitAll()
                         // 放行 WebSocket
                         .requestMatchers("/ws/**").permitAll()
+                        // 允许匿名访问 Agent 上报接口
+                        .requestMatchers("/api/agent/**").permitAll()
                         // 放行 Client 上报接口
                         .requestMatchers("/api/monitor/report").permitAll()
                         // 允许匿名访问刷新接口

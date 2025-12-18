@@ -3,6 +3,10 @@ package com.xu.monitorcommon.moudule;
 
 
 public class BaseMonitorModel {
+
+    //探针唯一标识(核心)
+    private String agentId;
+
     // 基础信息
     private String osName;      // 操作系统名称 (如 Windows 11)
     private String hostName;    // 主机名
@@ -191,5 +195,13 @@ public class BaseMonitorModel {
 
     public void setCpuTemperature(double cpuTemperature) {
         this.cpuTemperature = cpuTemperature;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 }

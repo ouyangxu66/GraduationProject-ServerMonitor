@@ -1,5 +1,6 @@
 package com.xu.monitorclient.task;
 
+import com.xu.monitorclient.core.AgentIdentity;
 import com.xu.monitorcommon.moudule.BaseMonitorModel;
 import com.xu.monitorcommon.utils.SystemMonitorUtil;
 import org.slf4j.Logger;
@@ -15,6 +16,11 @@ public class CollectorTask {
 
     //1.手动声明Logger常量,用来获取日志信息
     private static final Logger logger = LoggerFactory.getLogger(CollectorTask.class);
+
+    private final AgentIdentity agentIdentity;
+    public CollectorTask(AgentIdentity agentIdentity){
+        this.agentIdentity = agentIdentity;
+    }
 
     //2.从配置文件中获取服务端地址,机器id,通信密钥
     @Value("${monitor.server-url}")
@@ -41,6 +47,8 @@ public class CollectorTask {
             logger.info("[数据采集成功]CPU利用率: {}% 内存已使用: {}G",
                     data.getCpuLoad(),data.getMemoryUsed());
 
+            //4.3注入唯一标识
+            data.setAgentId(agentIdentity.getAgentId());
             sendDataToServer(data);
         } catch (InterruptedException e) {
             logger.error("采集或上报数据失败",e);

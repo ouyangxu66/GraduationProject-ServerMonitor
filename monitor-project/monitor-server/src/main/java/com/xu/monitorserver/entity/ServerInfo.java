@@ -20,6 +20,18 @@ public class ServerInfo {
     private String username; // 用户名
     private String password; // 密码
     private String createBy; // 创建人
+    private String agentId; // 唯一标识ID
+
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
 
     public String getCreateBy() {
         return createBy;
@@ -29,7 +41,6 @@ public class ServerInfo {
         this.createBy = createBy;
     }
 
-    private LocalDateTime createTime;
 
     public Long getId() {
         return id;
@@ -85,5 +96,13 @@ public class ServerInfo {
 
     public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 }

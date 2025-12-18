@@ -2,17 +2,16 @@ package com.xu.monitorserver.controller;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xu.monitorcommon.constant.AppConstants;
 import com.xu.monitorcommon.dto.AgentDTO;
 import com.xu.monitorcommon.result.R;
 import com.xu.monitorserver.entity.ServerInfo;
 import com.xu.monitorserver.mapper.ServerInfoMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -30,9 +29,8 @@ public class AgentController {
         this.serverMapper=serverMapper;
     }
 
-
-    //Redis Key 前缀: agent:online:{uuid}
-    private static final String REDIS_PREFIX = "agent:online:";
+    @Value("${monitor.app-secret}")
+    private String serverAppSecret;
 
     /**
      * Agent 启动注册
@@ -43,9 +41,12 @@ public class AgentController {
      * 4. 如果不存在 -> (可选) 自动创建一条新记录，或者忽略等待管理员手动绑定
      */
     @PostMapping("/register")
-    public R<Void> register(@RequestBody AgentDTO.Register dto) {
+    public R<Void> register(@RequestBody AgentDTO.Register dto,
+                            @RequestHeader(value = AppConstants.MONITOR_APP_SECRET_HEADER, required = false) String secretHeader) {
         logger.info("收到 Agent 注册请求: {}", dto);
 
+        //鉴权校验
+        checkSecret(secretHeader);
         // 1. 标记在线 (TTL 60秒，心跳间隔30秒，容错率2倍)
         refreshOnlineStatus(dto.getAgentId());
 
@@ -84,8 +85,12 @@ public class AgentController {
      * 逻辑：仅续期 Redis Key
      */
     @PostMapping("/heartbeat")
-    public R<Void> heartbeat(@RequestBody AgentDTO.Heartbeat dto) {
-        // 简单续期
+    public R<Void> heartbeat(@RequestBody AgentDTO.Heartbeat dto,
+                             @RequestHeader(value = AppConstants.MONITOR_APP_SECRET_HEADER, required = false) String secretHeader) {
+        logger.info("收到 Agent 心跳请求: {}", dto);
+        //鉴权校验
+        checkSecret(secretHeader);
+
         refreshOnlineStatus(dto.getAgentId());
         return R.ok();
     }
@@ -97,7 +102,20 @@ public class AgentController {
      * TTL: 60s
      */
     private void refreshOnlineStatus(String agentId) {
-        String key = REDIS_PREFIX + agentId;
+        String key = AppConstants.REDIS_AGENT_ONLINE_PREFIX + agentId;
         redisTemplate.opsForValue().set(key, "1", 60, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 鉴权逻辑:鉴别请求头是否携带密钥
+     * @param secretHeader
+     */
+    private void checkSecret(String secretHeader){
+        if (serverAppSecret == null || serverAppSecret.isEmpty()){
+            return;
+        }
+        if (!serverAppSecret.equals(secretHeader)){
+            throw new RuntimeException("非法访问: App Secret 错误或异常");
+        }
     }
 }

@@ -4,7 +4,16 @@
     <div v-if="!connected" class="connect-panel">
       <div class="panel-content">
         <h2 class="panel-title">建立远程连接</h2>
+
         <el-form :model="form" label-width="0" class="ssh-form">
+          <!-- 认证方式 -->
+          <el-form-item>
+            <el-radio-group v-model="form.authType" class="auth-type">
+              <el-radio-button value="password">密码登录</el-radio-button>
+              <el-radio-button value="publicKey">私钥登录</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+
           <el-form-item>
             <el-input v-model="form.host" placeholder="IP 地址" size="large">
               <template #prefix><el-icon><Monitor /></el-icon></template>
@@ -18,11 +27,38 @@
               <template #prefix><el-icon><User /></el-icon></template>
             </el-input>
           </el-form-item>
-          <el-form-item>
-            <el-input v-model="form.password" type="password" placeholder="密码" show-password size="large">
-              <template #prefix><el-icon><Lock /></el-icon></template>
-            </el-input>
-          </el-form-item>
+
+          <!-- 密码模式 -->
+          <template v-if="form.authType === 'password'">
+            <el-form-item>
+              <el-input v-model="form.password" type="password" placeholder="密码" show-password size="large">
+                <template #prefix><el-icon><Lock /></el-icon></template>
+              </el-input>
+            </el-form-item>
+          </template>
+
+          <!-- 私钥模式 -->
+          <template v-else>
+            <el-form-item>
+              <el-input
+                v-model="form.privateKey"
+                type="textarea"
+                :autosize="{ minRows: 6, maxRows: 10 }"
+                placeholder="粘贴 PEM 格式私钥（包含 BEGIN/END 行）"
+                class="privatekey-input"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-input
+                v-model="form.passphrase"
+                type="password"
+                placeholder="私钥口令（如有）"
+                show-password
+                size="large"
+              />
+            </el-form-item>
+          </template>
+
           <el-button type="primary" size="large" class="connect-btn" :loading="loading" @click="initSsh">
             立即连接
           </el-button>
@@ -66,15 +102,19 @@ const connected = ref(false)
 const loading = ref(false)
 
 const form = reactive({
+  authType: 'password',
   host: route.query.ip || '',
   port: route.query.port || 22,
   username: route.query.user || '',
-  password: route.query.pwd || ''
+  password: route.query.pwd || '',
+  privateKey: '',
+  passphrase: ''
 })
 
 let term = null
 let socket = null
 let fitAddon = null
+let resizeHandler = null
 
 // 🟢 关键：切换 Tab 回来时重新调整终端大小
 onActivated(() => {
@@ -86,8 +126,23 @@ onActivated(() => {
   }
 })
 
+const validateForm = () => {
+  if (!form.host) return '请填写 IP 地址'
+  if (!form.username) return '请填写用户名'
+  if (!form.port) form.port = 22
+
+  if (form.authType === 'password') {
+    if (!form.password) return '请填写密码'
+  } else {
+    if (!form.privateKey) return '请粘贴私钥内容'
+  }
+  return null
+}
+
 const initSsh = () => {
-  if (!form.host || !form.password) return ElMessage.warning('信息不完整')
+  const err = validateForm()
+  if (err) return ElMessage.warning(err)
+
   loading.value = true
 
   // 创建 WebSocket
@@ -96,49 +151,101 @@ const initSsh = () => {
 
   socket.onopen = () => {
     // 发送认证包
-    const authData = {
+    const connectData = {
       operate: 'connect',
+      authType: form.authType,
       host: form.host,
       port: Number(form.port),
-      username: form.username,
-      password: form.password
+      username: form.username
     }
-    socket.send(JSON.stringify(authData))
+
+    if (form.authType === 'password') {
+      connectData.password = form.password
+    } else {
+      connectData.privateKey = form.privateKey
+      if (form.passphrase) connectData.passphrase = form.passphrase
+    }
+
+    socket.send(JSON.stringify(connectData))
   }
 
   socket.onmessage = (e) => {
-    if (!connected.value) {
-      // 第一次收到消息，说明连接成功
-      connected.value = true
-      loading.value = false
-      nextTick(() => initXterm(e.data))
-    } else {
+    // 兼容：后端既可能发纯文本，也可能发 JSON 事件
+    const { isEvent, event } = tryParseEvent(e.data)
+
+    if (isEvent) {
+      if (event.type === 'ready') {
+        connected.value = true
+        loading.value = false
+        nextTick(() => initXterm())
+        return
+      }
+
+      if (event.type === 'error') {
+        loading.value = false
+        connected.value = false
+        const msg = event.message || '连接失败'
+        ElMessage.error(msg)
+
+        // 如果终端已经初始化，把错误也写进去
+        if (term) {
+          term.write(`\r\n\x1b[31m${msg}\x1b[0m\r\n`)
+        }
+
+        // 由客户端主动断开，避免残留状态
+        disconnect()
+        return
+      }
+    }
+
+    // 非事件：当作终端输出
+    if (term) {
       term.write(e.data)
     }
   }
 
   socket.onclose = () => {
-    connected.value = false
     loading.value = false
+
+    if (connected.value) {
+      ElMessage.warning('连接已断开')
+    }
+
+    connected.value = false
     term?.dispose()
-    ElMessage.warning('连接已断开')
+    term = null
   }
 
   socket.onerror = () => {
     connected.value = false
     loading.value = false
-    ElMessage.error('连接失败')
+    ElMessage.error('连接失败：WebSocket 建立异常')
   }
 }
 
-const initXterm = (initMsg) => {
+const tryParseEvent = (raw) => {
+  if (typeof raw !== 'string') return { isEvent: false, event: null }
+  if (!raw.startsWith('{')) return { isEvent: false, event: null }
+  try {
+    const obj = JSON.parse(raw)
+    if (obj && obj.type) return { isEvent: true, event: obj }
+  } catch (_) {
+    // ignore
+  }
+  return { isEvent: false, event: null }
+}
+
+const initXterm = () => {
+  // 只初始化一次
+  if (term) return
+
   term = new Terminal({
     fontSize: 15,
     cursorBlink: true,
     fontFamily: 'Menlo, Monaco, Consolas, monospace',
     theme: {
-      background: '#1e1e1e', // 终端保持深色背景
-      foreground: '#ffffff',
+      background: '#1e1e1e',
+      foreground: '#ffffff'
     }
   })
 
@@ -146,27 +253,32 @@ const initXterm = (initMsg) => {
   term.loadAddon(fitAddon)
   term.open(document.getElementById('xterm'))
 
-  // 写入初始消息
-  if (initMsg) term.write(initMsg)
   fitAddon.fit()
+  term.focus()
 
-  term.onData(data => {
+  term.onData((data) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ operate: 'command', command: data }))
     }
   })
 
-  window.addEventListener('resize', () => fitAddon.fit())
+  resizeHandler = () => fitAddon?.fit()
+  window.addEventListener('resize', resizeHandler)
 }
 
 const disconnect = () => {
-  socket?.close()
+  try {
+    socket?.close()
+  } catch (_) {
+    // ignore
+  }
+  socket = null
   connected.value = false
 }
 
 onBeforeUnmount(() => {
   disconnect()
-  window.removeEventListener('resize', fitAddon?.fit)
+  if (resizeHandler) window.removeEventListener('resize', resizeHandler)
 })
 
 onMounted(() => {
@@ -192,11 +304,26 @@ onMounted(() => {
   box-shadow: var(--el-box-shadow-light);
 }
 
+.panel-content {
+  max-height: 85vh;
+  overflow: auto;
+}
+
 .panel-title {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: var(--el-text-color-primary);
   font-weight: 800;
+}
+
+.auth-type {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.privatekey-input :deep(textarea) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .connect-btn {

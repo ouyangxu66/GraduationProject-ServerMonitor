@@ -33,6 +33,17 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <!-- 根据 isOnline 显示不同 Tag -->
+            <el-tag v-if="row.isOnline" type="success" effect="dark" round>
+              <el-icon class="is-loading" style="margin-right:2px" v-if="false"><Loading /></el-icon>
+              在线
+            </el-tag>
+            <el-tag v-else type="info" effect="plain" round>离线</el-tag>
+          </template>
+        </el-table-column>
+
         <el-table-column prop="port" label="端口" width="100" align="center" />
 
         <el-table-column prop="username" label="用户名" width="120" />
@@ -99,7 +110,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { getServerList, saveServer, deleteServer } from '@/api/monitor.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Monitor, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Monitor, Edit, Delete, Loading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const tableData = ref([])

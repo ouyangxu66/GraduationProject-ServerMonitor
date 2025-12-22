@@ -74,6 +74,14 @@ export function getServerList() {
     })
 }
 
+// 获取终端自动连接配置（ticket 模式，不返回明文密码/私钥）
+export function getServerSshConfig(id) {
+    return request({
+        url: `/server/${id}/ssh-config`,
+        method: 'get'
+    })
+}
+
 // 保存服务器 (新增/修改)
 export function saveServer(data) {
     return request({

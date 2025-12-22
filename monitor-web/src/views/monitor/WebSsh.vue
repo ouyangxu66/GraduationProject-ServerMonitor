@@ -90,6 +90,7 @@ import 'xterm/css/xterm.css'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { Monitor, User, Lock } from '@element-plus/icons-vue'
+import { getServerSshConfig } from '@/api/monitor'
 
 // 🟢 关键：定义组件名称以支持 keep-alive
 defineOptions({
@@ -111,6 +112,33 @@ const form = reactive({
   passphrase: ''
 })
 
+// ticket 模式：用于“从服务器列表一键进入终端并自动连接”
+const sshTicket = ref('')
+
+const loadSshConfigByServerId = async () => {
+  const serverId = route.query.serverId
+  if (!serverId) return false
+
+  try {
+    const resp = await getServerSshConfig(serverId)
+    // request.js 可能直接返回 data 或 {data:...}，兼容一下
+    const data = resp?.data || resp
+    if (!data) return false
+
+    form.host = data.host
+    form.port = data.port || 22
+    form.username = data.username
+    form.authType = data.authPreferred || 'password'
+    sshTicket.value = data.sshTicket || ''
+    return true
+  } catch (e) {
+    // 这里需要 catch：避免自动连接流程阻塞页面渲染；并给用户明确反馈
+    console.error('loadSshConfigByServerId failed', e)
+    ElMessage.error('获取终端连接信息失败，请稍后重试')
+    return false
+  }
+}
+
 let term = null
 let socket = null
 let fitAddon = null
@@ -131,11 +159,16 @@ const validateForm = () => {
   if (!form.username) return '请填写用户名'
   if (!form.port) form.port = 22
 
+  // ticket 模式：只要有 ticket，就不需要前端再填密码/私钥
+  if (sshTicket.value) return null
+
   if (form.authType === 'password') {
     if (!form.password) return '请填写密码'
-  } else {
-    if (!form.privateKey) return '请粘贴私钥内容'
+    return null
   }
+
+  // authType=publicKey
+  if (!form.privateKey) return '请粘贴私钥内容'
   return null
 }
 
@@ -150,20 +183,27 @@ const initSsh = () => {
   socket = new WebSocket(wsUrl)
 
   socket.onopen = () => {
-    // 发送认证包
+    // 发送 connect 包
     const connectData = {
-      operate: 'connect',
-      authType: form.authType,
-      host: form.host,
-      port: Number(form.port),
-      username: form.username
+      operate: 'connect'
     }
 
-    if (form.authType === 'password') {
-      connectData.password = form.password
+    // ticket 模式优先：不下发明文凭证
+    if (sshTicket.value) {
+      connectData.ticket = sshTicket.value
     } else {
-      connectData.privateKey = form.privateKey
-      if (form.passphrase) connectData.passphrase = form.passphrase
+      // 兼容手动模式
+      connectData.authType = form.authType
+      connectData.host = form.host
+      connectData.port = Number(form.port)
+      connectData.username = form.username
+
+      if (form.authType === 'password') {
+        connectData.password = form.password
+      } else {
+        connectData.privateKey = form.privateKey
+        if (form.passphrase) connectData.passphrase = form.passphrase
+      }
     }
 
     socket.send(JSON.stringify(connectData))
@@ -229,8 +269,11 @@ const tryParseEvent = (raw) => {
   try {
     const obj = JSON.parse(raw)
     if (obj && obj.type) return { isEvent: true, event: obj }
-  } catch (_) {
-    // ignore
+  } catch (e) {
+    // 兼容：后端正常输出可能包含以 '{' 开头但不是 JSON 的 ANSI/终端片段。
+    // 这里做轻量 debug，避免吞异常导致排查困难，同时不打扰用户。
+    console.debug('tryParseEvent: non-json payload', e)
+    return { isEvent: false, event: null }
   }
   return { isEvent: false, event: null }
 }
@@ -267,10 +310,9 @@ const initXterm = () => {
 }
 
 const disconnect = () => {
-  try {
-    socket?.close()
-  } catch (_) {
-    // ignore
+  if (socket) {
+    // WebSocket.close() 本身不会抛出业务可处理异常；让浏览器按标准处理即可
+    socket.close()
   }
   socket = null
   connected.value = false
@@ -281,7 +323,15 @@ onBeforeUnmount(() => {
   if (resizeHandler) window.removeEventListener('resize', resizeHandler)
 })
 
-onMounted(() => {
+onMounted(async () => {
+  // 1) serverId 模式：自动拉取配置并自动连接
+  const loaded = await loadSshConfigByServerId()
+  if (loaded && sshTicket.value) {
+    initSsh()
+    return
+  }
+
+  // 2) 兼容老模式：如果从 query 带了 ip+pwd，也可以自动连接
   if (form.host && form.password) initSsh()
 })
 </script>

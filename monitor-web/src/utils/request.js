@@ -29,6 +29,12 @@ service.interceptors.request.use(
 // --- 响应拦截器 ---
 service.interceptors.response.use(
     async (response) => {
+        // 0. 文件下载等二进制响应：直接返回，不走业务 code 解析
+        const rt = response.config?.responseType
+        if (rt === 'blob' || rt === 'arraybuffer') {
+            return response.data
+        }
+
         const res = response.data
 
         // 1. 成功响应

@@ -67,16 +67,81 @@
     </div>
 
     <!-- 已连接：显示终端 -->
-    <div v-else class="terminal-container">
+    <div v-else class="terminal-container" ref="terminalContainerRef">
       <div class="terminal-header">
         <div class="status-box">
           <span class="status-dot"></span>
           <span class="status-text">{{ form.username }}@{{ form.host }}</span>
         </div>
-        <el-button type="danger" size="small" plain @click="disconnect">断开连接</el-button>
+        <div class="header-actions">
+          <el-button type="primary" size="small" plain @click="toggleFilePanel">目录</el-button>
+          <el-button type="danger" size="small" plain @click="disconnect">断开连接</el-button>
+        </div>
       </div>
-      <!-- 终端挂载点 -->
-      <div id="xterm" class="xterm-box"></div>
+
+      <div class="terminal-body">
+        <div id="xterm" class="xterm-box"></div>
+
+        <div
+          v-if="showFilePanel"
+          class="file-panel"
+          :style="{ width: filePanelWidth + 'px' }"
+        >
+          <!-- 拖拽条 -->
+          <div class="file-panel-resizer" @mousedown="startResize"></div>
+
+          <div class="file-panel-header">
+            <!-- 同一行：返回 + 路径 + 刷新 + 上传 -->
+            <div class="toolbar-row">
+              <el-button
+                class="back-btn"
+                size="small"
+                circle
+                :disabled="currentPath === '/'"
+                @click="goParent"
+                title="返回上级"
+              >
+                <span class="back-icon">←</span>
+              </el-button>
+
+              <el-input v-model="currentPath" size="small" class="path-input" @keyup.enter="refreshList" />
+
+              <el-button size="small" @click="refreshList" :loading="fileLoading">刷新</el-button>
+
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                :before-upload="() => false"
+                :on-change="handleUploadChange"
+              >
+                <el-button size="small" type="success" :loading="uploading">上传</el-button>
+              </el-upload>
+            </div>
+          </div>
+
+          <div class="file-list">
+            <div v-if="fileLoading" class="hint">加载中...</div>
+            <div v-else-if="fileList.length === 0" class="hint">空目录</div>
+            <div v-else>
+              <div
+                v-for="item in fileList"
+                :key="item.path"
+                class="file-row"
+                @dblclick="item.type === 'DIR' ? enterDir(item.path) : null"
+              >
+                <div class="file-name">
+                  <span class="file-type">{{ item.type === 'DIR' ? '📁' : '📄' }}</span>
+                  <span class="name-text" :title="item.name">{{ item.name }}</span>
+                </div>
+                <div class="file-actions">
+                  <el-button v-if="item.type === 'DIR'" size="small" @click="enterDir(item.path)">进入</el-button>
+                  <el-button v-else size="small" type="primary" @click="downloadFile(item)">下载</el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -91,6 +156,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { Monitor, User, Lock } from '@element-plus/icons-vue'
 import { getServerSshConfig } from '@/api/monitor'
+import { getServerSftpTicket, sftpList, sftpUpload, sftpDownload } from '@/api/sftp'
 
 // 🟢 关键：定义组件名称以支持 keep-alive
 defineOptions({
@@ -143,6 +209,51 @@ let term = null
 let socket = null
 let fitAddon = null
 let resizeHandler = null
+const terminalContainerRef = ref(null)
+
+// 目录面板宽度（可拖拽）
+const filePanelWidth = ref(360)
+let resizing = false
+let resizeStartX = 0
+let resizeStartWidth = 360
+
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max)
+
+const startResize = (e) => {
+  // 仅左键
+  if (e.button !== 0) return
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartWidth = filePanelWidth.value
+
+  document.addEventListener('mousemove', onResizing)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const onResizing = (e) => {
+  if (!resizing) return
+  const containerWidth = terminalContainerRef.value?.clientWidth || 0
+  const maxWidth = Math.max(320, Math.floor(containerWidth / 2)) // 最大为黑窗口一半
+  const minWidth = 280
+
+  // resizer 在面板左侧：鼠标往左拖 => 面板变宽
+  const delta = resizeStartX - e.clientX
+  filePanelWidth.value = clamp(resizeStartWidth + delta, minWidth, maxWidth)
+}
+
+const stopResize = () => {
+  resizing = false
+  document.removeEventListener('mousemove', onResizing)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+onBeforeUnmount(() => {
+  stopResize()
+})
 
 // 🟢 关键：切换 Tab 回来时重新调整终端大小
 onActivated(() => {
@@ -334,6 +445,104 @@ onMounted(async () => {
   // 2) 兼容老模式：如果从 query 带了 ip+pwd，也可以自动连接
   if (form.host && form.password) initSsh()
 })
+
+const showFilePanel = ref(false)
+const currentPath = ref('/')
+const fileList = ref([])
+const fileLoading = ref(false)
+const uploading = ref(false)
+
+const getServerId = () => {
+  const serverId = route.query.serverId
+  return serverId ? Number(serverId) : null
+}
+
+const toggleFilePanel = async () => {
+  showFilePanel.value = !showFilePanel.value
+  if (showFilePanel.value) {
+    await refreshList()
+  }
+}
+
+const fetchOneTimeSftpTicket = async () => {
+  const serverId = getServerId()
+  if (!serverId) {
+    throw new Error('缺少 serverId，无法使用目录功能')
+  }
+  const data = await getServerSftpTicket(serverId)
+  return data?.sftpTicket
+}
+
+const refreshList = async () => {
+  try {
+    fileLoading.value = true
+    const ticket = await fetchOneTimeSftpTicket()
+    const list = await sftpList({ ticket, path: currentPath.value })
+    fileList.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    console.error('refreshList failed', e)
+    ElMessage.error(e?.message || '获取目录失败')
+  } finally {
+    fileLoading.value = false
+  }
+}
+
+const enterDir = async (path) => {
+  currentPath.value = path
+  await refreshList()
+}
+
+const goParent = async () => {
+  if (currentPath.value === '/') return
+  const p = currentPath.value.replace(/\\/g, '/')
+  const idx = p.lastIndexOf('/')
+  currentPath.value = idx <= 0 ? '/' : p.substring(0, idx)
+  await refreshList()
+}
+
+const handleUploadChange = async (uploadFile) => {
+  try {
+    const raw = uploadFile?.raw
+    if (!raw) return
+
+    uploading.value = true
+    const ticket = await fetchOneTimeSftpTicket()
+
+    const fd = new FormData()
+    fd.append('ticket', ticket)
+    fd.append('targetDir', currentPath.value)
+    fd.append('overwrite', 'false')
+    fd.append('file', raw)
+
+    await sftpUpload(fd)
+    ElMessage.success('上传成功')
+    await refreshList()
+  } catch (e) {
+    console.error('upload failed', e)
+    ElMessage.error(e?.message || '上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+const downloadFile = async (item) => {
+  try {
+    const ticket = await fetchOneTimeSftpTicket()
+    const blob = await sftpDownload({ ticket, path: item.path })
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = item.name || 'download'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('download failed', e)
+    ElMessage.error(e?.message || '下载失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -382,11 +591,12 @@ onMounted(async () => {
   margin-top: 10px;
 }
 
-/* 终端容器 */
+/* 终端容器：限制最大宽度，避免在大屏上被拉伸导致布局异常 */
 .terminal-container {
   width: 100%;
+  max-width: 1400px;
   height: 85vh;
-  background-color: #1e1e1e; /* 终端背景始终为深色 */
+  background-color: #1e1e1e;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -404,37 +614,103 @@ onMounted(async () => {
   border-bottom: 1px solid #333;
 }
 
-.status-box {
+.header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.status-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #2ecc71;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #2ecc71;
+.terminal-body {
+  flex: 1;
+  display: flex;
+  min-height: 0; /* 关键：让子元素的 overflow 生效 */
+  min-width: 0;
 }
 
+/* 左侧终端区域：在 flex 中允许收缩，避免被右侧面板挤出/覆盖 */
+.xterm-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  background-color: #1e1e1e;
+  overflow: hidden; /* 终端自身滚动由 xterm 控制 */
+}
+
+/* 右侧文件面板：强制深色背景，避免被 Element Plus 默认白底影响 */
+.file-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background-color: #ffffff;
+  color: #303133;
+  border-left: 1px solid #dcdfe6;
+  position: relative;
+}
+
+/* 可拖拽调整宽度的拖拽条（在面板左侧） */
+.file-panel-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.file-panel-resizer:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* header 白底 */
+.file-panel-header {
+  padding: 10px;
+  border-bottom: 1px solid #e4e7ed;
+  background-color: #ffffff;
+}
+
+/* 工具栏同一行 */
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* 输入框占满剩余空间 */
+.path-input {
+  flex: 1;
+}
+
+/* 列表区域白底 + 可滚动 */
+.file-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  background-color: #ffffff;
+}
+
+.file-row:hover {
+  background: #f5f7fa;
+}
+
+.hint {
+  padding: 10px;
+  color: #909399;
+}
+
+/* 黑窗口顶部 root@host 文字变为白色 */
 .status-text {
-  color: #ccc;
+  color: #ffffff;
   font-size: 14px;
   font-family: monospace;
 }
-
-.xterm-box {
-  flex: 1;
-  padding: 8px;
-  background-color: #1e1e1e;
-  /* 修复滚动条样式 */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 4px;
-  }
-}
 </style>
+

@@ -82,11 +82,7 @@
       <div class="terminal-body">
         <div id="xterm" class="xterm-box"></div>
 
-        <div
-          v-if="showFilePanel"
-          class="file-panel"
-          :style="{ width: filePanelWidth + 'px' }"
-        >
+        <div v-if="showFilePanel" class="file-panel" :style="{ width: filePanelWidth + 'px' }">
           <!-- 拖拽条 -->
           <div class="file-panel-resizer" @mousedown="startResize"></div>
 
@@ -109,13 +105,28 @@
               <el-button size="small" @click="refreshList" :loading="fileLoading">刷新</el-button>
 
               <el-upload
-                :auto-upload="false"
+                :auto-upload="true"
                 :show-file-list="false"
-                :before-upload="() => false"
-                :on-change="handleUploadChange"
+                :http-request="uploadRequest"
               >
                 <el-button size="small" type="success" :loading="uploading">上传</el-button>
               </el-upload>
+            </div>
+
+            <!-- 上传进度条 -->
+            <div v-if="uploading" class="progress-row">
+              <el-progress :percentage="uploadPercent" :stroke-width="8" />
+            </div>
+
+            <!-- 下载进度条 -->
+            <div v-if="downloading" class="progress-row">
+              <el-progress
+                :percentage="downloadPercent"
+                :stroke-width="8"
+                :text-inside="true"
+                status="success"
+              />
+              <div class="progress-hint">正在下载：{{ downloadingName }}</div>
             </div>
           </div>
 
@@ -156,7 +167,8 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { Monitor, User, Lock } from '@element-plus/icons-vue'
 import { getServerSshConfig } from '@/api/monitor'
-import { getServerSftpTicket, sftpList, sftpUpload, sftpDownload } from '@/api/sftp'
+import { getServerSftpTicket, sftpList } from '@/api/sftp'
+import axios from 'axios'
 
 // 🟢 关键：定义组件名称以支持 keep-alive
 defineOptions({
@@ -452,6 +464,12 @@ const fileList = ref([])
 const fileLoading = ref(false)
 const uploading = ref(false)
 
+// 上传/下载进度状态
+const uploadPercent = ref(0)
+const downloading = ref(false)
+const downloadPercent = ref(0)
+const downloadingName = ref('')
+
 const getServerId = () => {
   const serverId = route.query.serverId
   return serverId ? Number(serverId) : null
@@ -494,18 +512,21 @@ const enterDir = async (path) => {
 
 const goParent = async () => {
   if (currentPath.value === '/') return
-  const p = currentPath.value.replace(/\\/g, '/')
+  const p = currentPath.value.replaceAll('\\\\', '/')
   const idx = p.lastIndexOf('/')
   currentPath.value = idx <= 0 ? '/' : p.substring(0, idx)
   await refreshList()
 }
 
-const handleUploadChange = async (uploadFile) => {
+// 自定义上传：通过 axios 的 onUploadProgress 拿到进度
+const uploadRequest = async (options) => {
   try {
-    const raw = uploadFile?.raw
+    const raw = options?.file
     if (!raw) return
 
     uploading.value = true
+    uploadPercent.value = 0
+
     const ticket = await fetchOneTimeSftpTicket()
 
     const fd = new FormData()
@@ -514,7 +535,16 @@ const handleUploadChange = async (uploadFile) => {
     fd.append('overwrite', 'false')
     fd.append('file', raw)
 
-    await sftpUpload(fd)
+    await axios.post('/api/sftp/upload', fd, {
+      headers: {
+        Authorization: `Bearer ${userStore.token}`
+      },
+      onUploadProgress: (evt) => {
+        if (!evt.total) return
+        uploadPercent.value = Math.min(100, Math.round((evt.loaded / evt.total) * 100))
+      }
+    })
+
     ElMessage.success('上传成功')
     await refreshList()
   } catch (e) {
@@ -522,25 +552,50 @@ const handleUploadChange = async (uploadFile) => {
     ElMessage.error(e?.message || '上传失败')
   } finally {
     uploading.value = false
+    setTimeout(() => {
+      uploadPercent.value = 0
+    }, 500)
   }
 }
 
 const downloadFile = async (item) => {
   try {
-    const ticket = await fetchOneTimeSftpTicket()
-    const blob = await sftpDownload({ ticket, path: item.path })
+    downloading.value = true
+    downloadPercent.value = 0
+    downloadingName.value = item?.name || 'download'
 
-    const url = window.URL.createObjectURL(blob)
+    const ticket = await fetchOneTimeSftpTicket()
+
+    const resp = await axios.get('/api/sftp/download', {
+      params: { ticket, path: item.path },
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${userStore.token}`
+      },
+      onDownloadProgress: (evt) => {
+        if (!evt.total) return
+        downloadPercent.value = Math.min(100, Math.round((evt.loaded / evt.total) * 100))
+      }
+    })
+
+    const blob = resp.data
+    const url = globalThis.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = item.name || 'download'
     document.body.appendChild(a)
     a.click()
     a.remove()
-    window.URL.revokeObjectURL(url)
+    globalThis.URL.revokeObjectURL(url)
   } catch (e) {
     console.error('download failed', e)
     ElMessage.error(e?.message || '下载失败')
+  } finally {
+    setTimeout(() => {
+      downloading.value = false
+      downloadPercent.value = 0
+      downloadingName.value = ''
+    }, 300)
   }
 }
 </script>
@@ -706,11 +761,22 @@ const downloadFile = async (item) => {
   color: #909399;
 }
 
-/* 黑窗口顶部 root@host 文字变为白色 */
+/* 顶部 root@host 加大加粗 */
 .status-text {
   color: #ffffff;
-  font-size: 14px;
-  font-family: monospace;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.progress-row {
+  margin-top: 8px;
+}
+
+.progress-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
 }
 </style>
 

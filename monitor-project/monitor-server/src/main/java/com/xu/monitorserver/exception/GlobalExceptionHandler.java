@@ -10,6 +10,7 @@ import org.springframework.security.authentication.InternalAuthenticationService
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * 全局异常处理器
@@ -59,6 +60,17 @@ public class GlobalExceptionHandler {
         logger.error("内部认证错误: {}", e.getMessage());
         return R.fail(500, "认证服务异常");
     }
+
+    /**
+     * 处理上传文件超过限制异常。
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public R<Void> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        logger.warn("上传文件过大: {}", e.getMessage());
+        // 413 更语义化，但项目统一用 R.code；这里返回 413 便于前端判断
+        return R.fail(413, "上传文件过大，已超过服务器限制");
+    }
+
     /**
      * 处理所有未知的运行时异常 (兜底策略)
      * 场景：空指针(NPE)、数组越界、数据库连接失败等不可预见的错误

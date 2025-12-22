@@ -16,6 +16,11 @@ influx:
   bucket: monitor_bucket
 
 spring:
+  servlet:
+    multipart:
+      # SFTP 上传文件大小限制（可按需调整）
+      max-file-size: 200MB # 上传文件最大值
+      max-request-size: 200MB # 单次请求最大值
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 👇 改成你的数据库地址

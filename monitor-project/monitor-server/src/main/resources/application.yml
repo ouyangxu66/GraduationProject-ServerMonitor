@@ -3,6 +3,10 @@ server:
 
 monitor:
   app-secret: abc12345
+  # WebSSH 凭证加解密密钥（AES-256-GCM）
+  # 说明：请使用 Base64 编码的 32 字节随机值；生产环境建议通过环境变量注入并定期轮换
+  crypto:
+    ssh-secret-key: ${SSH_SECRET_KEY:}
 
 # 👇 InfluxDB 配置
 influx:

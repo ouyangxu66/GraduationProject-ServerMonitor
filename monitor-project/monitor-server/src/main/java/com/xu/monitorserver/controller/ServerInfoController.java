@@ -1,14 +1,19 @@
 package com.xu.monitorserver.controller;
 
 import com.xu.monitorcommon.result.R;
+import com.xu.monitorserver.dto.SshConfigResponse;
 import com.xu.monitorserver.entity.ServerInfo;
 import com.xu.monitorserver.exception.ServiceException;
 import com.xu.monitorserver.service.serverservice.IServerInfoService;
+import com.xu.monitorserver.service.serverservice.SshSecretCryptoService;
+import com.xu.monitorserver.service.sshservice.SshTicket;
+import com.xu.monitorserver.service.sshservice.SshTicketService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -17,8 +22,16 @@ public class ServerInfoController {
 
     private final IServerInfoService serverInfoService;
 
-    public ServerInfoController(IServerInfoService serverInfoService) {
+    private final SshTicketService sshTicketService;
+
+    private final SshSecretCryptoService cryptoService;
+
+    public ServerInfoController(IServerInfoService serverInfoService,
+                                SshTicketService sshTicketService,
+                                SshSecretCryptoService cryptoService) {
         this.serverInfoService = serverInfoService;
+        this.sshTicketService = sshTicketService;
+        this.cryptoService = cryptoService;
     }
 
     /**
@@ -29,6 +42,59 @@ public class ServerInfoController {
     public R<List<ServerInfo>> list() {
         String username = getCurrentUsername();
         return R.ok(serverInfoService.listForUser(username));
+    }
+
+    /**
+     * 终端页自动连接用配置接口（ticket 方案）。
+     *
+     * <p>返回内容不包含 password/privateKey/passphrase 明文，仅返回：
+     * host/port/username/authPreferred/hasPrivateKey/fingerprint/sshTicket。
+     * 前端在 WebSocket connect 报文带上 sshTicket 即可。</p>
+     */
+    @GetMapping("/{id}/ssh-config")
+    public R<SshConfigResponse> sshConfig(@PathVariable("id") Long id) {
+        String username = getCurrentUsername();
+
+        ServerInfo server = serverInfoService.getById(id);
+        if (server == null) {
+            throw new ServiceException(404, "服务器不存在");
+        }
+        if (server.getCreateBy() == null || !server.getCreateBy().equals(username)) {
+            throw new ServiceException(403, "无权访问此服务器");
+        }
+
+        boolean hasKey = server.hasPrivateKeyConfigured() && server.getPrivateKeyEnc() != null && !server.getPrivateKeyEnc().isBlank();
+        String authPreferred = hasKey ? "publicKey" : "password";
+
+        String plaintextPrivateKey = hasKey ? cryptoService.decryptFromBase64(server.getPrivateKeyEnc()) : null;
+        String plaintextPassphrase = hasKey ? cryptoService.decryptFromBase64(server.getKeyPassphraseEnc()) : null;
+        String plaintextPassword = (!hasKey && server.getPassword() != null) ? cryptoService.decryptFromBase64(server.getPassword()) : null;
+
+        int port = server.getPort() != null ? server.getPort() : 22;
+
+        SshTicket ticket = new SshTicket(
+                server.getId(),
+                server.getIp(),
+                port,
+                server.getUsername(),
+                authPreferred,
+                plaintextPassword,
+                plaintextPrivateKey,
+                plaintextPassphrase,
+                Instant.now().plusSeconds(60)
+        );
+        String sshTicket = sshTicketService.issue(username, ticket);
+
+        SshConfigResponse resp = new SshConfigResponse();
+        resp.setServerId(server.getId());
+        resp.setHost(server.getIp());
+        resp.setPort(port);
+        resp.setUsername(server.getUsername());
+        resp.setAuthPreferred(authPreferred);
+        resp.setHasPrivateKey(hasKey);
+        resp.setFingerprint(server.getPrivateKeyFingerprint());
+        resp.setSshTicket(sshTicket);
+        return R.ok(resp);
     }
 
     /**

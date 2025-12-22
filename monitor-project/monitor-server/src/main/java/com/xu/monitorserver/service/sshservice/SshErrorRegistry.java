@@ -16,6 +16,12 @@ public final class SshErrorRegistry {
     public static final String WS_BAD_REQUEST = "WS_BAD_REQUEST";
     public static final String SSH_CONNECT_PAYLOAD_INVALID = "SSH_CONNECT_PAYLOAD_INVALID";
 
+    /** WebSocket 鉴权相关 */
+    public static final String WS_UNAUTHORIZED = "WS_UNAUTHORIZED";
+
+    /** Ticket 相关 */
+    public static final String SSH_TICKET_INVALID = "SSH_TICKET_INVALID";
+
     /** SSH 错误 */
     public static final String SSH_AUTH_FAILED = "SSH_AUTH_FAILED";
     public static final String SSH_KEY_INVALID = "SSH_KEY_INVALID";
@@ -73,6 +79,8 @@ public final class SshErrorRegistry {
             case SSH_HOST_UNREACHABLE -> "连接失败：目标主机不可达或端口未开放";
             case SSH_CONNECT_FAILED -> "连接失败：无法建立 SSH 会话";
             case SSH_CONNECT_PAYLOAD_INVALID -> "参数错误：请检查连接信息";
+            case SSH_TICKET_INVALID -> "连接信息已过期：请返回列表重新进入终端";
+            case WS_UNAUTHORIZED -> "未登录或登录已过期：请重新登录";
             case WS_BAD_REQUEST -> "消息解析失败：请检查参数格式";
             default -> "连接失败：服务端异常";
         };

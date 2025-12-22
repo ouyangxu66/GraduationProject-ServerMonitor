@@ -106,7 +106,32 @@ sequenceDiagram
 ```
 
 ### 3.3 WebSSH WebSocket 鉴权与交互流程 (Special Case) 🔌
-由于 WebSocket 无法使用 HTTP Header 鉴权，且涉及敏感的 Linux 密码传输，采用 **握手鉴权 + JSON 协议传输** 的双重保障机制。
+由于 WebSocket 无法使用 HTTP Header 鉴权，且涉及敏感的 SSH 认证信息传输，本系统采用：
+
+- **第一层：握手鉴权（Token）**：WebSocket URL 携带 Access Token，仅用于建立 WS 通道的身份校验。
+- **第二层：SSH 认证（双方案）**：连接建立后，通过 JSON 协议发起 SSH 登录，支持两种认证方式：
+  - **用户名 + 密码 (password)**
+  - **用户名 + 私钥 (publickey / key)**
+
+> 设计目标：在不牺牲体验（Web 端即时终端）的前提下，提供更接近生产环境的 SSH 登录方式（尤其是密钥登录），并让前端能够给出“可读、可定位”的失败提示。
+
+#### 3.3.1 双认证方案：协议字段与能力矩阵
+**前端 -> 后端** 建议统一使用一套 `connect` 报文，通过 `authType` 区分认证模式。
+
+| 字段 | 类型 | 必填 | 说明 |
+| :--- | :--- | :---: | :--- |
+| `operate` | string | ✅ | 固定为 `connect` |
+| `host` | string | ✅ | 目标主机 IP/域名 |
+| `port` | number | ❌ | SSH 端口，默认 22 |
+| `username` | string | ✅ | Linux 用户名 |
+| `authType` | string | ✅ | `password` / `privateKey` |
+| `password` | string | 🔁 | `authType=password` 时必填 |
+| `privateKey` | string | 🔁 | `authType=privateKey` 时必填（建议为 PEM 文本/或者前端上传后转文本） |
+| `passphrase` | string | ❌ | 私钥口令（加密私钥时使用） |
+
+> ✅ 可扩展：如果将来要支持“密钥文件上传”，也可以保持协议不变，仅把 `privateKey` 的来源从“文本”变成“文件读取后的文本”。
+
+#### 3.3.2 时序：握手鉴权 + connect 登录（双认证）
 
 ```mermaid
 sequenceDiagram
@@ -115,12 +140,12 @@ sequenceDiagram
     participant Interceptor as 🕵️ AuthHandshakeInterceptor
     participant JWT as 🎫 JwtUtils
     participant Handler as 🔌 WebSshHandler
-    participant Service as 🔧 SshServiceImpl
+    participant Service as 🔧 SshServiceImpl (JSch)
 
     Note over Xterm: 1. 握手鉴权 (Token 校验)
     Xterm->>Interceptor: WS Connect ws://host/ws/ssh?token=AT...
     Interceptor->>Interceptor: request.getParameter("token")
-    
+
     alt Token 无效/过期
         Interceptor-->>Xterm: 握手失败 (连接断开)
     else Token 有效
@@ -129,12 +154,19 @@ sequenceDiagram
         Interceptor->>Handler: 握手成功 (Connection Established)
     end
 
-    Note over Xterm: 2. SSH 连接初始化 (JSON 协议)
-    Xterm->>Handler: 发送 JSON: { "operate": "connect", "host": "192...", "pwd": "..." }
-    Handler->>Handler: 解析 JSON，提取 Linux 认证信息
-    Handler->>Service: initConnection(ip, user, pwd)
-    Service->>Service: JSch Session.connect()
-    Service-->>Xterm: 返回终端欢迎语 (Stream)
+    Note over Xterm: 2. SSH 连接初始化 (JSON 协议: connect)
+    Xterm->>Handler: 发送 JSON: { operate: "connect", host, port, username, authType, ... }
+    Handler->>Service: initConnection(...)
+
+    alt authType = password (用户名密码)
+        Service->>Service: session.setPassword(password)
+        Service->>Service: session.connect()
+    else authType = privateKey (用户名密钥)
+        Service->>Service: jsch.addIdentity(privateKey, passphrase)
+        Service->>Service: session.connect()
+    end
+
+    Service-->>Xterm: 推送连接结果/欢迎语 (Stream)
 
     Note over Xterm: 3. 实时交互
     loop 全双工 Shell 交互
@@ -144,6 +176,40 @@ sequenceDiagram
         Service-->>Xterm: 读取 SSH InputStream -> 推送 WebSocket
     end
 ```
+
+#### 3.3.3 JSch 实现要点（为什么需要“认证类型”）
+在 JSch 里，密码登录与密钥登录的差异核心在于：
+
+- **密码登录**：`session.setPassword(password)`
+- **密钥登录**：`jsch.addIdentity(privateKey, passphrase)`（或 `addIdentity(path)`）
+
+并且两者会触发不同的失败场景：
+
+- 用户名/密码错误（`Auth fail`）
+- 私钥无效（格式不对、缺少 header、内容被裁剪）
+- 私钥口令错误（密钥被加密但 passphrase 不正确）
+- 服务器拒绝密钥认证（sshd 配置不允许 `publickey` 或未配置 `authorized_keys`）
+
+因此在 JSON 协议中用 `authType` 显式标明认证方式，能让后端在连接前做必要校验（字段是否齐全、私钥格式基本校验），也能让前端在 UI 上给出对应输入项与错误提示。
+
+#### 3.3.4 失败提示：让前端“准确提示”的数据结构建议
+为了避免前端只能展示一条“连接失败”，推荐后端在 WS 返回中携带结构化错误信息（**不要求一定暴露底层异常堆栈**）。
+
+建议的后端 -> 前端错误报文：
+
+```json
+{
+  "operate": "connect",
+  "success": false,
+  "errorCode": "SSH_AUTH_FAILED",
+  "message": "SSH 认证失败：用户名或凭证不正确",
+  "detail": "Auth fail"
+}
+```
+
+- `errorCode` 用于前端做细分提示、国际化、多语言。
+- `message` 面向用户，建议简洁可读。
+- `detail` 便于开发排查，可根据环境控制是否返回（生产环境可选隐藏/降级）。
 
 ---
 

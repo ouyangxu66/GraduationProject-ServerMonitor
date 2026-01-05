@@ -1,196 +1,410 @@
 # 🚀 Monitor System | 分布式服务器运维监控平台
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-JDK17-b07219?style=flat-square&logo=openjdk" alt="Java">
-  <img src="https://img.shields.io/badge/SpringBoot-3.3.x-6db33f?style=flat-square&logo=springboot" alt="SpringBoot">
-  <img src="https://img.shields.io/badge/Vue.js-3.x-4fc08d?style=flat-square&logo=vue.js" alt="Vue">
-  <img src="https://img.shields.io/badge/Security-RBAC-red?style=flat-square&logo=guard" alt="Security">
-  <img src="https://img.shields.io/badge/InfluxDB-2.7-22adf6?style=flat-square&logo=influxdb" alt="InfluxDB">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License">
-</p>
+<img src="https://img.shields.io/badge/Java-JDK17-b07219?style=flat-square&logo=openjdk" alt="Java">
+<img src="https://img.shields.io/badge/SpringBoot-3.3.x-6db33f?style=flat-square&logo=springboot" alt="SpringBoot">
+<img src="https://img.shields.io/badge/Vue.js-3.x-4fc08d?style=flat-square&logo=vue.js" alt="Vue">
+<img src="https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-red?style=flat-square" alt="Security">
+<img src="https://img.shields.io/badge/InfluxDB-2.7-22adf6?style=flat-square&logo=influxdb" alt="InfluxDB">
 
-> **Monitor System** 是一个基于 **Spring Boot 3** 和 **Vue 3** 的全栈分布式运维平台。它不仅具备 **OSHI** 硬件采集与 **InfluxDB** 时序存储能力，还集成了商业级的 **RBAC 权限管理体系**、**WebSSH 远程终端**以及现代化的 **扁平化/暗黑模式** UI 设计，旨在为开发者提供一个开箱即用的轻量级运维解决方案。
-
----
-
-## 🖼️ 界面预览 (Preview)
-
-| 📊 实时监控仪表盘 (Dark Mode) | 💻 Web SSH 远程终端 |
-| :---: | :---: |
-| <img width="2558" height="1236" alt="image" src="https://github.com/user-attachments/assets/00f2681e-83ac-4cd7-a86b-a61e29c66ecd" /> | <img width="2555" height="1233" alt="image" src="https://github.com/user-attachments/assets/ad34ad8a-f4a6-4d83-b59a-bf6f0e3777b9" />
-
-
-| 🛡️ 登录与注册 | 👤 个人中心 & 权限管理 |
-| :---: | :---: |
-| <img width="2551" height="1239" alt="image" src="https://github.com/user-attachments/assets/61f2c3c3-9d59-4edf-85e9-3cb93f6434d8" /> | <img width="2559" height="1238" alt="image" src="https://github.com/user-attachments/assets/31ca3319-03aa-4105-87c5-604557bcc1c8" /> |
+> **Monitor System** 是一个面向学习与实战的 **全栈运维监控平台**：
+> - ✅ **性能监控**：monitor-client 探针采集（OSHI）→ monitor-server 写入 InfluxDB → Web 大屏可视化
+> - ✅ **在线终端**：WebSSH（WebSocket + JSch + xterm.js）
+> - ✅ **文件管理**：SFTP 远程上传/下载（JSch SFTP + 一次性 Ticket）
+> - ✅ **鉴权体系**：双 Token 无感刷新 + 动态 RBAC（前后端联动）
+>
+> 如果你是初学者：建议先按本文的 **「快速启动」** 跑通，再按下方 **「模块技术文档导航」** 深入。
 
 ---
 
-## ✨ 核心特性 (Features)
+## 🧭 目录 (Contents)
 
-### 1. 🛡️ 企业级安全鉴权
-*   **JWT 无状态认证**：基于 Spring Security 6 + JWT 实现前后端分离的安全认证。
-*   **RBAC 权限控制**：细粒度的权限管理（用户 -> 角色 -> 菜单/按钮），支持动态指令 `v-permission` 控制按钮显隐。
-*   **账号生命周期**：支持用户自助注册、密码修改（分步验证）、账号注销（逻辑删除）等完整流程。
-
-### 2. 🖥️ 深度硬件监控
-*   **多维度采集**：基于 **OSHI (v6.x)** 深入底层，精准采集 CPU、内存、JVM 堆内存等核心指标。
-*   **分布式探针**：轻量级 Client 端设计，支持多台服务器同时上报，毫秒级数据刷新。
-
-### 3. 🔌 增强型 Web SSH
-*   **浏览器即终端**：集成 **Xterm.js** + **xterm-addon-fit**，提供接近原生 Shell 的操作体验。
-*   **全双工通信**：后端使用 **JSch** 建立 SSH 连接，通过 WebSocket 实现标准输入输出流的实时透传。
-*   **连接保持**：支持页面切换后的 **Keep-Alive** 连接保持，防止誤触导致连接断开。
-
-### 4. 🎨 现代化 UI/UX
-*   **扁平化设计 (Flat Design)**：去繁就简，采用高对比度、纯色块的视觉风格。
-*   **暗黑模式 (Dark Mode)**：全站支持一键切换深色主题，自动适配图表与终端配色。
-*   **云端存储**：集成 **阿里云 OSS**，实现用户头像等静态资源的云端托管。
-
-### 5. 💾 高性能时序存储
-*   **InfluxDB 2.x 驱动**：利用时序数据库处理高并发监控数据写入与降采样查询 (Flux)。
+- [✨ 功能总览](#-功能总览)
+- [🏗️ 系统架构一图看懂](#-系统架构一图看懂)
+- [📚 模块技术文档导航](#-模块技术文档导航)
+- [📂 项目结构](#-项目结构)
+- [🚀 快速启动（Windows cmd 友好）](#-快速启动windows-cmd-友好)
+- [🧪 联调验证清单（最常见问题）](#-联调验证清单最常见问题)
+- [🚦 默认端口与访问入口（速查）](#-默认端口与访问入口速查)
+- [🧩 核心接口入口（新手最常用）](#-核心接口入口新手最常用)
+- [🎯 最小功能体验路径（从 0 到完整体验）](#-最小功能体验路径从-0-到完整体验)
+- [🔐 配置与安全提示（避免踩坑）](#-配置与安全提示避免踩坑)
+- [🧠 新手学习建议：从哪看起最快？](#-新手学习建议从哪看起最快)
+- [🔮 路线图](#-路线图)
 
 ---
 
-## 🛠 技术架构 (Tech Stack)
+## ✨ 功能总览
 
-### 后端 (Backend)
-| 技术 | 版本 | 说明 |
-| :--- | :--- | :--- |
-| **Spring Boot** | `3.3.5` | 核心框架 (Jakarta EE) |
-| **Spring Security** | `6.x` | 安全鉴权与访问控制 |
-| **MyBatis-Plus** | `3.5.x` | ORM 框架 (MySQL) |
-| **InfluxDB Client** | `6.x` | 时序数据库 SDK |
-| **Aliyun OSS** | `3.17.x` | 对象存储服务 |
-| **JSch** | `0.1.55` | SSH2 协议实现 |
-| **OSHI** | `6.4.x` | 硬件信息采集 |
+### 1) 🛡️ 安全鉴权（双 Token + 动态 RBAC）
 
-### 前端 (Frontend)
-| 技术 | 说明 |
-| :--- | :--- |
-| **Vue 3** | Composition API |
-| **Vite** | 极速构建工具 |
-| **Pinia** | 状态管理 (User, Theme) |
-| **Element Plus** | UI 组件库 (支持 Dark Mode) |
-| **ECharts 5** | 数据可视化 |
-| **Xterm.js** | Web 终端组件 |
+- 登录后发放 **AccessToken + RefreshToken**，Access 过期自动刷新（无感）
+- **RBAC 权限体系**：用户 → 角色 → 菜单/按钮
+- 前端通过 `v-permission` 指令控制按钮显隐（与后端权限点保持一致）
+
+### 2) 📊 性能监控（分布式 Agent + InfluxDB）
+
+- `monitor-client` 周期采集：CPU/内存/磁盘/网络/负载/温度/Top5 进程
+- `monitor-server` 写入 **InfluxDB**（时序）并提供历史查询（默认 10s 聚合）
+- `monitor-web` Dashboard 支持 **实时刷新 + 历史回溯**（时间选择器）
+
+### 3) 🖥️ WebSSH 在线终端（WebSocket + JSch）
+
+- 浏览器直接操作远程服务器 Shell（xterm.js）
+- 后端通过 JSch 建立 SSH Session/ChannelShell
+- 支持基于 **一次性 Ticket 自动连接**（避免下发 SSH 明文凭证）
+
+### 4) 📁 SFTP 文件上传/下载（JSch SFTP + Ticket）
+
+- 前端上传（Multipart）/下载（Blob）
+- 后端统一转发到远程服务器 SFTP
+- 使用 **一次性 Ticket** 绑定用户，降低泄露与重放风险
 
 ---
 
-## 📂 项目结构 (Structure)
+## 🏗️ 系统架构一图看懂
+
+```mermaid
+flowchart LR
+  subgraph Agent[monitor-client 探针]
+    A1[OSHI 采集] --> A2[BaseMonitorModel]
+    A2 --> A3[POST /api/monitor/report]
+  end
+
+  subgraph Server[monitor-server 服务端]
+    S1[MonitorController] --> S2[MonitorService]
+    S2 --> S3[InfluxRepository]
+    S3 --> I[(InfluxDB)]
+
+    WS[WebSocket /ws/ssh] --> SSH[JSch SSH]
+    HTTP[/api/sftp/*/] --> SFTP[JSch SFTP]
+    DB[(MySQL)]
+    R[(Redis 在线状态)]
+  end
+
+  subgraph Web[monitor-web 前端]
+    V1[Dashboard(ECharts)]
+    V2[WebSSH(xterm.js)]
+    V3[SFTP 面板]
+  end
+
+  A3 --> Server
+  Web -->|/api 代理| Server
+  Server --> Web
+```
+
+---
+
+## 📚 模块技术文档导航
+
+> 技术细节已经整理成模块级文档，建议按需阅读：
+
+- `monitor-project/PERFORMANCE_MONITOR-MODULE.md`：性能监控（Agent/InfluxDB/前端大屏/联调步骤）
+- `monitor-project/WebSSH_SERVERMANAGE-MODULE.md`：服务器资产管理 + WebSSH 终端（WS 协议、Ticket、JSch）
+- `monitor-project/SFTP-MODULE.md`：SFTP 上传/下载（一次性 Ticket、安全策略、接口契约）
+- `monitor-project/SECURITY-MODULE.md`：双 Token 无感刷新 + 动态 RBAC（前后端完整鉴权体系）
+
+---
+
+## 📂 项目结构
 
 ```text
-GraduationProject-ServerMonitor (Root)
-├── 📂 monitor-project              # [后端] Maven 父工程
-│   ├── 📂 monitor-common           # [公共模块] Pojo, Utils, Result封装
-│   ├── 📂 monitor-client           # [探针端] 运行在目标服务器，采集上报
-│   ├── 📂 monitor-server           # [服务端] 核心业务
-│   │   ├── config                  # Security, OSS, WebConfig
-│   │   ├── controller              # API 接口 (Auth, User, Server, Report)
-│   │   ├── entity                  # 实体类 (SysUser, SysRole...)
-│   │   ├── filter                  # JWT 过滤器
-│   │   ├── handler                 # WebSocket 处理器 (WebSSH)
-│   │   ├── service                 # 业务逻辑 (SshService, UserService...)
-│   │   └── utils                   # JwtUtils, AliyunOssUtil
-│   └── 📄 pom.xml
-│
-├── 📂 monitor-web                  # [前端] Vue 3 + Vite 工程
-│   ├── 📂 src
-│   │   ├── 📂 api                  # Axios 接口封装
-│   │   ├── 📂 directive            # 自定义指令 (v-permission)
-│   │   ├── 📂 layout               # 布局组件 (MainLayout)
-│   │   ├── 📂 stores               # Pinia (user.js, theme.js)
-│   │   ├── 📂 views                # 页面 (Dashboard, Login, Profile, SSH)
-│   │   └── 📂 utils                # 工具类 (request.js 拦截器)
-│   └── 📄 vite.config.js
-│
-└── 📂 sql                          # [数据库脚本]
-    ├── 01_init_structure.sql       # 初始化表结构
-    ├── 02_add_user_profile.sql     # 用户画像扩展
-    └── 03_rbac_upgrade.sql         # RBAC 权限体系升级
+GraduationProject (Root)
+├── monitor-project/                 # Maven 父工程（后端）
+│   ├── monitor-common/              # 公共模块（DTO/工具类/统一返回 R）
+│   ├── monitor-client/              # Agent 探针（采集 + 上报 + 注册/心跳）
+│   ├── monitor-server/              # 服务端（鉴权、监控、WebSSH、SFTP、RBAC）
+│   ├── *.md                         # 模块技术文档（本仓库维护）
+│   └── pom.xml
+├── monitor-web/                     # 前端（Vue3 + Vite）
+└── sql/                             # MySQL 初始化与升级脚本
 ```
 
 ---
 
-## 🚀 快速开始 (Getting Started)
+## 🚀 快速启动（Windows cmd 友好）
 
-### 1. 环境准备
-*   **JDK**: 17+
-*   **MySQL**: 8.0+
-*   **InfluxDB**: 2.7.x
-*   **Node.js**: 16+
+> 目标：本地跑通 **monitor-server + monitor-web + InfluxDB + MySQL**，可选再跑 **Redis + monitor-client**。
 
-### 2. 数据库初始化
-请在 MySQL 中创建数据库 `monitor_db`，并**依次执行** `sql/` 目录下的脚本：
-1.  `01_init_structure.sql` (基础表)
-2.  `02_add_user_profile.sql` (用户扩展)
-3.  `03_rbac_upgrade.sql` (权限体系)
+### 0) 环境要求
 
-### 3. 后端配置
-修改 `monitor-server/src/main/resources/application.yml`：
+- JDK 17+
+- Maven（或使用各子模块自带 `mvnw.cmd`）
+- Node.js 16+（建议 18 LTS 也可）
+- MySQL 8+
+- InfluxDB 2.x
+- Redis（可选，但建议：用于 Agent 在线状态）
 
-<details>
-<summary>📄 点击查看关键配置示例</summary>
+---
 
-```yaml
-server:
-  port: 8080
+### 1) 初始化数据库（MySQL）
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/monitor_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: your_mysql_password
+创建数据库：`monitor_db`，并按顺序执行 `sql/` 下脚本。
 
-# InfluxDB 配置
-influx:
-  url: http://localhost:8086
-  token: YOUR_INFLUX_TOKEN
-  bucket: monitor_bucket
-  org: my_org
+建议执行顺序（以仓库实际脚本为准）：
 
-# 阿里云 OSS 配置 (用于头像上传)
-aliyun:
-  oss:
-    endpoint: oss-cn-hangzhou.aliyuncs.coe
-    access-key-id: ${ALIYUN_ACCESS_KEY}      # 建议使用环境变量，不要硬编码
-    access-key-secret: ${ALIYUN_SECRET_KEY}
-    bucket-name: your-bucket-name
-    url-prefix: https://your-bucket.oss-cn-hangzhou.aliyuncs.com/
+1. `01_init_structure.sql`
+2. `02_add_user_profile.sql`
+3. `03_rbac_upgrade.sql`
+4. `04_update_rbac.sql`
+5. `05_update_monitor.sql`
+6. `06_add_server_ssh_private_key.sql`
+
+---
+
+### 2) 配置后端（monitor-server）
+
+编辑：`monitor-project/monitor-server/src/main/resources/application.yml`
+
+你通常只需要确认/修改这些：
+
+- `spring.datasource.*`：MySQL 连接
+- `influx.*`：InfluxDB 的 url/token/org/bucket
+- `spring.data.redis.*`：Redis（如果你启用 Agent 在线状态）
+- `monitor.app-secret`：Agent 注册/心跳鉴权 secret（client 需要保持一致）
+
+---
+
+### 3) 启动后端（monitor-server）
+
+```cmd
+cd /d D:\GraduationProject\monitor-project\monitor-server
+mvnw.cmd spring-boot:run
 ```
-</details>
 
-### 4. 启动服务
-1.  **Server**: 运行 `MonitorServerApplication`。
-2.  **Client**: 修改 `monitor-client` 中的 `server-url` 为 `http://localhost:8080/api/monitor/report`，然后启动。
-3.  **Web**:
-    ```bash
-    cd monitor-web
-    npm install
-    npm run dev
-    ```
-
-访问 `http://localhost:5173`，默认管理员账号：`admin` / `123456`。
+后端默认端口：`8080`。
 
 ---
 
-## 🔮 路线图 (Roadmap)
+### 4) 启动前端（monitor-web）
 
-- [x] **基础监控**: CPU、内存数据采集与时序存储
-- [x] **Web SSH**: 基于 WebSocket 的远程终端 (支持 Keep-Alive)
-- [x] **安全鉴权**: Spring Security + JWT + RBAC 动态权限
-- [x] **用户中心**: 头像云存储 (OSS)、密码修改、账号注销
-- [x] **UI 设计**: 扁平化设计 + 暗黑模式 (Dark Mode)
-- [ ] **告警中心**: 自定义阈值（如 CPU > 90%），支持邮件/钉钉/飞书通知
-- [ ] **文件管理**: 类似 SFTP 的远程文件上传/下载功能
-- [ ] **Docker 部署**: 提供 docker-compose 一键拉起所有服务
+```cmd
+cd /d D:\GraduationProject\monitor-web
+npm install
+npm run dev
+```
+
+前端默认地址：
+
+- http://localhost:5173
+
+> 说明：前端 axios `baseURL=/api`，Vite 会把 `/api` 代理到 `http://localhost:8080`（见 `monitor-web/vite.config.js`）。
 
 ---
 
-## 🤝 贡献 (Contribution)
+### 5)（可选）启动 Redis 并设置环境变量
 
-欢迎提交 Issue 和 Pull Request！
+后端 `application.yml` 中 Redis host/password 使用环境变量：`${REDIS_HOST}` / `${REDIS_PASSWORD}`。
 
-## 📄 开源协议 (License)
+如果你本地 Redis 在 `127.0.0.1:6379` 且无密码，可以在当前 `cmd` 窗口临时设置：
 
-[MIT License](LICENSE) © 2024 ouyangxu66@github.com
+```cmd
+set REDIS_HOST=127.0.0.1
+set REDIS_PASSWORD=
+```
+
+然后再启动后端。
+
+---
+
+### 6)（可选）启动 monitor-client（Agent 探针）
+
+编辑：`monitor-project/monitor-client/src/main/resources/application.yml`
+
+至少确认：
+
+- `monitor.server-base-url: http://<server-host>:8080`
+- `monitor.server-url: http://<server-host>:8080/api/monitor/report`
+- `monitor.app-secret` 与后端 `monitor.app-secret` 一致
+
+启动：
+
+```cmd
+cd /d D:\GraduationProject\monitor-project\monitor-client
+mvnw.cmd spring-boot:run
+```
+
+---
+
+## 🧪 联调验证清单（最常见问题）
+
+1) 前端能否访问： http://localhost:5173
+
+2) 后端是否启动： http://localhost:8080
+
+3) InfluxDB 是否可用：
+- 后端日志无 Influx 连接异常
+
+4) 如果你启动了 Agent：
+- 后端能收到上报：`POST /api/monitor/report`
+- Dashboard 曲线能出点
+
+5) **最常见坑：ip 不一致导致查不到数据**
+- 写入 tag ip 来自 Agent 的 `SystemMonitorUtil.getLocalIp()`
+- 查询 ip 来自 MySQL 的 `server_info.ip`
+- 两者不一致会导致：Influx 有数据但前端一直空
+
+6) Agent 注册/心跳报 “App Secret 错误”
+- `monitor-client.monitor.app-secret` 必须与 `monitor-server.monitor.app-secret` 一致
+
+> 更详细的联调步骤与排错请看：`monitor-project/PERFORMANCE_MONITOR-MODULE.md`
+
+---
+
+## 🚦 默认端口与访问入口（速查）
+
+| 组件 | 默认端口 | 说明 |
+| :--- | :--- | :--- |
+| `monitor-server` | `8080` | 后端 API 与 WebSocket 服务（见 `monitor-server/src/main/resources/application.yml`） |
+| `monitor-web` | `5173` | 前端开发服务器（见 `monitor-web/vite.config.js`） |
+| `monitor-client` | `8081` | Agent 自身启动端口（见 `monitor-client/src/main/resources/application.yml`，可不对外提供服务） |
+| InfluxDB | `8086` | 时序数据库（见后端 `influx.url` 配置） |
+| MySQL | `3306` | 业务数据库 |
+| Redis | `6379` | Agent 在线状态与心跳 TTL |
+
+### 前端请求为什么能到后端？（/api 代理规则）
+
+- 前端 axios：`monitor-web/src/utils/request.js` 设置 `baseURL: '/api'`
+- 所以请求 `'/monitor/cpu-history'` 实际发起：`/api/monitor/cpu-history`
+- 开发环境代理：`monitor-web/vite.config.js` 把 `/api` 转发到 `http://localhost:8080`
+
+---
+
+## 🧩 核心接口入口（新手最常用）
+
+> 以下均为后端 `monitor-server` 中真实存在的接口路径（已对齐源码 Controller）。
+
+### 1) 认证（/api/auth）
+
+- `POST /api/auth/register`：用户注册
+- `POST /api/auth/login`：登录（返回 accessToken/refreshToken 等）
+- `POST /api/auth/refresh`：刷新 Token（无感刷新用）
+
+### 2) 服务器资产（/api/server）
+
+- `GET  /api/server/list`：当前用户服务器列表
+- `POST /api/server/save`：新增/更新服务器
+- `DELETE /api/server/{id}`：删除服务器
+
+与 WebSSH / SFTP Ticket 强相关的接口：
+
+- `GET /api/server/{id}/ssh-config`：获取 WebSSH 连接配置（**仅返回 ticket，不下发明文凭证**）
+- `GET /api/server/{id}/sftp-ticket`：获取 SFTP 文件操作 ticket（**一次性**）
+
+### 3) 性能监控（/api/monitor）
+
+- `POST /api/monitor/report`：Agent 上报监控数据（`BaseMonitorModel`）
+- `GET  /api/monitor/base-info?ip=...`：Dashboard 顶部基础信息
+- `GET  /api/monitor/cpu-history?ip=...&start=...&end=...`：CPU 曲线
+- `GET  /api/monitor/disk-history?ip=...&start=...&end=...`：磁盘曲线
+- `GET  /api/monitor/net-history?ip=...&start=...&end=...`：网络曲线
+- `GET  /api/monitor/temp-history?ip=...&start=...&end=...`：温度曲线
+- `GET  /api/monitor/load-history?ip=...`：负载多折线（一般用于实时）
+- `GET  /api/monitor/disk-io-history?ip=...&start=...&end=...`：磁盘 IO 多折线
+
+### 4) SFTP 文件管理（/api/sftp）
+
+- `GET  /api/sftp/list?ticket=...&path=...`：列目录
+- `POST /api/sftp/upload`：上传（multipart：ticket/targetDir/overwrite/file）
+- `GET  /api/sftp/download?ticket=...&path=...`：下载（二进制流）
+
+### 5) Agent 注册/心跳（/api/agent）
+
+- `POST /api/agent/register`：Agent 启动注册（需要 Header `X-Monitor-App-Secret`）
+- `POST /api/agent/heartbeat`：心跳续期（需要 Header `X-Monitor-App-Secret`）
+
+> 注意：你们当前实现里，`/api/monitor/report` 并未强制校验 `X-Monitor-App-Secret`（文档已标注）。
+
+---
+
+## 🎯 最小功能体验路径（从 0 到完整体验）
+
+> 这部分只写“你们项目里真实存在的功能链路”，不写假数据/假账号。
+
+1. **启动依赖与服务**
+   - MySQL / InfluxDB（以及可选 Redis）
+   - `monitor-server` + `monitor-web`
+
+2. **注册并登录**
+   - 注册：`POST /api/auth/register`
+   - 登录：`POST /api/auth/login`（前端登录页会自动调用）
+
+3. **（可选但推荐）启动 Agent，让 Dashboard 有数据**
+   - 启动 `monitor-client`
+   - 确保它在上报：`POST /api/monitor/report`
+
+4. **进入 Dashboard 观察监控曲线**
+   - Dashboard 会调用：
+     - `/api/monitor/base-info`
+     - `/api/monitor/*-history`
+
+5. **添加服务器资产并体验 WebSSH**
+   - 资产列表：`GET /api/server/list`
+   - 新增/修改：`POST /api/server/save`
+   - 进入终端前先拿 ticket：`GET /api/server/{id}/ssh-config`
+   - WebSocket：`/ws/ssh?token=<accessToken>`，并发送 `connect(ticket)`
+
+6. **体验 SFTP 文件上传/下载**
+   - 先拿 ticket：`GET /api/server/{id}/sftp-ticket`
+   - 列目录：`GET /api/sftp/list`
+   - 上传：`POST /api/sftp/upload`
+   - 下载：`GET /api/sftp/download`
+
+---
+
+## 🔐 配置与安全提示（避免踩坑）
+
+### 1) InfluxDB Token
+
+`monitor-server/src/main/resources/application.yml` 中 `influx.token` 是访问 InfluxDB 的敏感信息。
+
+建议：
+
+- 开发环境可以先写在本地配置
+- 生产环境建议用环境变量或配置中心注入
+
+### 2) Agent 鉴权密钥（monitor.app-secret）
+
+- 后端：`monitor.app-secret`
+- Agent：`monitor.app-secret`
+
+必须保持一致，否则 `/api/agent/register` 与 `/api/agent/heartbeat` 会抛出 “非法访问” 异常。
+
+### 3) WebSSH/SFTP 凭证加密密钥（SSH_SECRET_KEY）
+
+后端配置里存在：
+
+- `monitor.crypto.ssh-secret-key: ${SSH_SECRET_KEY:}`
+
+该值用于对数据库中保存的 SSH 凭证（密码/私钥/口令）进行 AES/GCM 加解密。
+
+建议：
+
+- 开发环境可以临时设置一个 Base64 的 32 字节随机 key
+- 生产环境务必使用更安全的密钥管理方案，并定期轮换
+
+---
+
+## 🧠 新手学习建议：从哪看起最快？
+
+1. 先跑通：本 README 的「快速启动」
+2. 再看性能监控：`monitor-project/PERFORMANCE_MONITOR-MODULE.md`
+3. 再看 WebSSH：`monitor-project/WebSSH_SERVERMANAGE-MODULE.md`
+4. 再看 SFTP：`monitor-project/SFTP-MODULE.md`
+5. 最后看鉴权体系：`monitor-project/SECURITY-MODULE.md`
+
+---
+
+## 🔮 路线图
+
+- [x] 性能监控：CPU/内存/磁盘/网络/负载/温度 + InfluxDB
+- [x] WebSSH：WebSocket 远程终端
+- [x] SFTP：远程文件上传/下载
+- [x] 安全鉴权：双 Token 无感刷新 + 动态 RBAC
+- [ ] 告警中心：阈值告警（邮件/钉钉/飞书）
+- [ ] Docker 部署：docker-compose 一键启动全套依赖
+
+---
+
+## 📄 许可证 (License)
+
+MIT

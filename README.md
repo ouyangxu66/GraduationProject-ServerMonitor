@@ -65,31 +65,32 @@
 
 ```mermaid
 flowchart LR
-  subgraph Agent[monitor-client 探针]
+  subgraph Agent[monitor\-client 探针]
     A1[OSHI 采集] --> A2[BaseMonitorModel]
     A2 --> A3[POST /api/monitor/report]
   end
 
-  subgraph Server[monitor-server 服务端]
+  subgraph Server[monitor\-server 服务端]
     S1[MonitorController] --> S2[MonitorService]
     S2 --> S3[InfluxRepository]
     S3 --> I[(InfluxDB)]
 
     WS[WebSocket /ws/ssh] --> SSH[JSch SSH]
-    HTTP[/api/sftp/*/] --> SFTP[JSch SFTP]
+    HTTP[/api/sftp/\*/] --> SFTP[JSch SFTP]
     DB[(MySQL)]
     R[(Redis 在线状态)]
   end
 
-  subgraph Web[monitor-web 前端]
-    V1[Dashboard(ECharts)]
-    V2[WebSSH(xterm.js)]
+  subgraph Web[monitor\-web 前端]
+    V1[Dashboard \- ECharts]
+    V2[WebSSH \- xterm\.js]
     V3[SFTP 面板]
   end
 
   A3 --> Server
   Web -->|/api 代理| Server
   Server --> Web
+
 ```
 
 ---

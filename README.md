@@ -65,26 +65,26 @@
 
 ```mermaid
 flowchart LR
-  subgraph Agent[monitor\-client 探针]
+  subgraph Agent[monitor-client 探针]
     A1[OSHI 采集] --> A2[BaseMonitorModel]
     A2 --> A3[POST /api/monitor/report]
   end
 
-  subgraph Server[monitor\-server 服务端]
+  subgraph Server[monitor-server 服务端]
     S1[MonitorController] --> S2[MonitorService]
     S2 --> S3[InfluxRepository]
     S3 --> I[(InfluxDB)]
 
     WS[WebSocket /ws/ssh] --> SSH[JSch SSH]
-    HTTP[/api/sftp/\*/] --> SFTP[JSch SFTP]
+    HTTP[/api/sftp/*/] --> SFTP[JSch SFTP]
     DB[(MySQL)]
     R[(Redis 在线状态)]
   end
 
-  subgraph Web[monitor\-web 前端]
-    V1[Dashboard \- ECharts]
-    V2[WebSSH \- xterm\.js]
-    V3[SFTP 面板]
+  subgraph Web[monitor-web 前端]
+    V1[Dashboard - ECharts]
+    V2[WebSSH - xterm.js]
+    V3[SFTP 文件面板]
   end
 
   A3 --> Server
@@ -92,6 +92,82 @@ flowchart LR
   Server --> Web
 
 ```
+
+---
+
+## 📚 OpenAPI 文档与 Swagger UI（已集成）
+
+> 目标：让你在本地启动后端后，可以直接通过浏览器查看并调试本项目的 HTTP API。
+>
+> 本项目使用 **springdoc-openapi** 将后端 Controller 自动生成 OpenAPI 文档，并提供 Swagger UI 页面。
+
+### 1) 你能看到什么？（两种文档来源）
+
+本仓库里有两份“API 文档来源”，用途不一样：
+
+1. **运行时自动生成（推荐你调试用）**
+   - 由 `monitor-server` 启动后自动生成
+   - 优点：一定与当前代码一致，接口改了立刻反映
+
+2. **仓库内的静态文档（便于阅读/对照）**
+   - 根目录的 `openapi.yaml`
+   - 用途：给同学/评审快速浏览接口契约；也方便前后端对齐
+
+> 注意：`openapi.yaml` 不是 Swagger UI 的必需品。
+> Swagger UI 默认展示的是后端运行时的 `/v3/api-docs`。
+
+### 2) 后端侧是怎么接入的？（对应源码位置）
+
+后端在 `monitor-project/monitor-server` 模块中接入：
+
+- OpenAPI 基本信息配置：
+  - `monitor-project/monitor-server/src/main/java/com/xu/monitorserver/config/OpenApiConfig.java`
+  - 主要配置了：title / version / description / contact
+
+- Swagger / OpenAPI 路径配置：
+  - `monitor-project/monitor-server/src/main/resources/application.yml`
+  - 关键配置（已存在）：
+    - `springdoc.api-docs.path: /v3/api-docs`
+    - `springdoc.swagger-ui.path: /swagger-ui.html`
+
+### 3) 本地怎么访问 Swagger UI？
+
+先启动后端（见本文「快速启动」），默认端口是 `8080`：
+
+- Swagger UI：
+  - http://localhost:8080/swagger-ui.html
+
+- OpenAPI JSON（给前端/工具读取）：
+  - http://localhost:8080/v3/api-docs
+
+如果你想把 OpenAPI JSON 下载成文件：
+
+```cmd
+curl -o api-docs.json http://localhost:8080/v3/api-docs
+```
+
+### 4) 认证接口怎么调试？（带 JWT）
+
+本项目大多数业务接口需要登录后的 JWT（Bearer Token）。推荐调试顺序：
+
+1. 先调用登录接口：`POST /api/auth/login`
+2. 从响应里拿到 `accessToken`
+3. 在 Swagger UI 右上角 **Authorize** 中填写：
+
+```text
+Bearer <你的accessToken>
+```
+
+然后再去调试：
+
+- 服务器资产：`/api/server/*`
+- SFTP：`/api/sftp/*`
+- RBAC 管理接口：`/api/admin/*`
+
+### 5) 和前端联调有什么关系？
+
+- 前端开发环境把 `/api` 代理到后端（Swagger UI 不走代理，直接是后端页面）
+- 你在 Swagger UI 里调通了接口，基本就意味着前端 axios 能通
 
 ---
 

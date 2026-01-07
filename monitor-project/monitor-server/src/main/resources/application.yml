@@ -63,3 +63,14 @@ aliyun:
     bucket-name: server-monitor-xu               # Bucket 名称
     # 访问域名前缀 (Bucket名.节点)
     url-prefix: https://server-monitor-xu.oss-cn-shenzhen.aliyuncs.com/
+
+
+# Swagger配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  show-actuator: true

@@ -1,0 +1,2154 @@
+# Monitor Project API 文档
+#
+# 项目名称: Monitor Project API
+# 版本: 0.1.0
+# 描述: 这是一个服务器监控系统的API文档，用于定义后端HTTP接口
+#
+# 约定说明:
+# - 所有JSON接口统一使用R<T>格式：包含code、msg、data三个字段
+# - SFTP下载接口返回二进制流（application/octet-stream），不使用R<T>封装
+# - WebSocket相关接口本次未纳入OpenAPI规范
+#
+# API分类:
+# - Auth: 登录/注册/刷新Token相关接口
+# - User: 用户个人资料管理接口
+# - AdminUser: 管理端用户管理接口（基于RBAC权限控制）
+# - Server: 服务器信息与SSH/SFTP ticket管理接口
+# - SFTP: SFTP文件管理接口
+# - Monitor: 性能监控数据上报与查询接口
+# - Agent: Agent探针注册与心跳接口
+#
+# 安全机制:
+# - BearerAuth: 使用JWT Token进行身份验证，通过Authorization头传递
+# - MonitorAppSecret: Agent与Server通信的专用密钥，通过X-Monitor-App-Secret头传递
+#
+# 响应格式:
+# - 成功响应: { code: 200, msg: "操作成功", data: {...} }
+# - 错误响应: { code: 非200状态码, msg: "错误信息", data: null }
+#
+# 服务器配置:
+# - 本地开发环境: http://localhost:8080
+# - 生产环境占位符: https://api.example.com
+
+openapi: 3.0.3
+info:
+  title: Monitor Project API
+  version: 0.1.0
+  description: |
+    自动生成的 OpenAPI 3.0.3 文档（后端 HTTP 接口）。
+
+    约定：
+    - 所有 JSON 接口统一使用 R<T>：{ code, msg, data }
+    - SFTP 下载接口返回二进制流（application/octet-stream），不使用 R<T>
+    - WebSocket 本次不纳入 OpenAPI
+servers:
+  - url: http://localhost:8080
+    description: local
+  - url: https://api.example.com
+    description: production placeholder
+
+tags:
+  - name: Auth
+    description: 登录/注册/刷新 Token
+  - name: User
+    description: 用户个人资料
+  - name: AdminUser
+    description: 管理端-用户管理（RBAC）
+  - name: Server
+    description: 服务器信息与 SSH/SFTP ticket
+  - name: SFTP
+    description: SFTP 文件管理
+  - name: Monitor
+    description: 性能监控数据上报与查询
+  - name: Agent
+    description: Agent 注册与心跳
+
+paths:
+  /api/admin/user/list:
+    get:
+      tags: [AdminUser]
+      summary: 分页获取用户列表
+      description: 管理员分页查询用户列表（支持按 username 模糊查询）。返回 MyBatis-Plus IPage 结构。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: 页码（从 1 开始）
+          schema:
+            type: integer
+            format: int32
+            default: 1
+          example: 1
+        - name: size
+          in: query
+          required: false
+          description: 每页数量
+          schema:
+            type: integer
+            format: int32
+            default: 10
+          example: 10
+        - name: username
+          in: query
+          required: false
+          description: 用户名（模糊匹配）
+          schema:
+            type: string
+          example: test
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSysUserPage'
+              examples:
+                example:
+                  value:
+                    code: 200
+                    msg: 操作成功
+                    data:
+                      records:
+                        - id: 4
+                          permission: null
+                          username: test002
+                          nickname: 测试用户
+                          password: null
+                          avatar: ""
+                          email: null
+                          bio: null
+                          role: ROLE_USER
+                          deleted: 0
+                          createTime: "2025-12-11T16:10:02Z"
+                          updateTime: "2025-12-11T16:10:02Z"
+                      total: 0
+                      size: 10
+                      current: 1
+                      pages: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: 登录
+      description: 登录成功返回 accessToken + refreshToken。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDTO'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTokenPairMap'
+              examples:
+                example:
+                  value:
+                    code: 200
+                    msg: 操作成功
+                    data:
+                      accessToken: eyJhbGciOiJIUzI1NiJ9.xxx.yyy
+                      refreshToken: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 刷新 Token
+      description: 使用 refreshToken 换取新的 accessToken + refreshToken（RefreshToken 会轮换）。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            examples:
+              example:
+                value:
+                  refreshToken: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTokenPairMap'
+              examples:
+                example:
+                  value:
+                    code: 200
+                    msg: 操作成功
+                    data:
+                      accessToken: eyJhbGciOiJIUzI1NiJ9.xxx.yyy
+                      refreshToken: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: 注册
+      description: 注册新用户。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDTO'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/user/profile:
+    get:
+      tags: [User]
+      summary: 获取个人资料（包含权限列表）
+      description: |
+        获取当前登录用户的个人资料，并从 Spring Security Context 注入权限列表到 permission 字段。
+
+        需携带 AccessToken：Authorization: Bearer <token>
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSysUser'
+              examples:
+                example:
+                  value:
+                    code: 200
+                    msg: 操作成功
+                    data:
+                      id: 2
+                      permission:
+                        - ROLE_ADMIN
+                        - server:add
+                        - server:delete
+                        - server:edit
+                        - server:list
+                      username: admin
+                      nickname: GGBond
+                      password: null
+                      avatar: https://server-monitor-xu.oss-cn-shenzhen.aliyuncs.com/avatar/2025/12/10/235b7c646f824220b94016edc173726a.png
+                      email: 666666@qq.com
+                      bio: 我是管理员
+                      role: ROLE_ADMIN
+                      deleted: 0
+                      createTime: "2025-12-08T16:03:22Z"
+                      updateTime: "2025-12-10T15:53:33Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [User]
+      summary: 更新个人资料
+      description: 更新昵称/头像/邮箱/简介等基本信息。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileDTO'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/user/password:
+    put:
+      tags: [User]
+      summary: 修改密码
+      description: 通过 oldPassword/newPassword 修改当前用户密码。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordMap'
+            examples:
+              example:
+                value:
+                  oldPassword: "123456"
+                  newPassword: "123456"
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/user/avatar:
+    post:
+      tags: [User]
+      summary: 上传头像
+      description: multipart/form-data 上传头像文件，返回头像 URL。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 头像文件
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RString'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: 上传文件过大
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tooLarge:
+                  value: { code: 413, msg: 上传文件过大，已超过服务器限制, data: null }
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/user/check-password:
+    post:
+      tags: [User]
+      summary: 校验密码
+      description: 校验输入的密码是否正确。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckPasswordMap'
+            examples:
+              example:
+                value:
+                  password: "123456"
+      responses:
+        '200':
+          description: 成功（注意：业务失败时该接口也可能返回 200，但 code!=200）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RBoolean'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/user/delete-account:
+    post:
+      tags: [User]
+      summary: 注销账号
+      description: 输入密码后注销当前账号。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountMap'
+            examples:
+              example:
+                value:
+                  password: "123456"
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/user/add:
+    post:
+      tags: [AdminUser]
+      summary: 添加用户
+      description: 管理员添加用户。默认密码为 123456（后端会加密存储）。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SysUser'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/user/update:
+    put:
+      tags: [AdminUser]
+      summary: 修改用户
+      description: 管理员更新用户信息（不在此接口修改密码）。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SysUser'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/user/delete:
+    delete:
+      tags: [AdminUser]
+      summary: 删除用户（逻辑删除）
+      description: 管理员逻辑删除用户（deleted=1）。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: 用户ID
+          schema:
+            type: integer
+            format: int64
+          example: 4
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/user/reset-pwd/{id}:
+    post:
+      tags: [AdminUser]
+      summary: 重置密码
+      description: 管理员将指定用户密码重置为 123456。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 用户ID
+          schema:
+            type: integer
+            format: int64
+          example: 4
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/server/{id}/ssh-config:
+    get:
+      tags: [Server]
+      summary: 获取 SSH 连接配置（ticket 方案）
+      description: |
+        为 WebSSH 终端页生成短期一次性 sshTicket，前端在 WebSocket 握手时携带该 ticket。
+        响应不包含 password/privateKey/passphrase 明文。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 服务器ID
+          schema:
+            type: integer
+            format: int64
+          example: 10
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSshConfigResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 服务器不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value: { code: 404, msg: 服务器不存在, data: null }
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/server/save:
+    post:
+      tags: [Server]
+      summary: 保存服务器（新增或更新）
+      description: 新增或更新服务器信息。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerInfo'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RString'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/server/{id}:
+    delete:
+      tags: [Server]
+      summary: 删除服务器
+      description: 删除当前用户创建的服务器。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 服务器ID
+          schema:
+            type: integer
+            format: int64
+          example: 10
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RString'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/server/{id}/sftp-ticket:
+    get:
+      tags: [Server]
+      summary: 获取 SFTP 一次性票据
+      description: |
+        为 SFTP 文件操作签发短期一次性 ticket（约 60 秒有效）。
+        ticket 与当前登录用户绑定。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 服务器ID
+          schema:
+            type: integer
+            format: int64
+          example: 10
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSftpTicketResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 服务器不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value: { code: 404, msg: 服务器不存在, data: null }
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/sftp/list:
+    get:
+      tags: [SFTP]
+      summary: 列目录
+      description: 使用一次性 ticket 列出远程目录内容。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ticket
+          in: query
+          required: true
+          description: 一次性 SFTP ticket
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: false
+          description: 目录路径（不传默认 /）
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSftpList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/sftp/upload:
+    post:
+      tags: [SFTP]
+      summary: 上传文件
+      description: multipart/form-data 上传文件到远程 SFTP。
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ticket, targetDir, file]
+              properties:
+                ticket:
+                  type: string
+                  description: 一次性 SFTP ticket
+                targetDir:
+                  type: string
+                  description: 目标目录
+                  example: /
+                overwrite:
+                  type: boolean
+                  description: 是否覆盖（默认 false）
+                  default: false
+                file:
+                  type: string
+                  format: binary
+                  description: 上传文件
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSftpUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 远程文件已存在且 overwrite=false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  value: { code: 409, msg: 远程文件已存在, data: null }
+        '413':
+          description: 上传文件过大
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tooLarge:
+                  value: { code: 413, msg: 上传文件过大，已超过服务器限制, data: null }
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/sftp/download:
+    get:
+      tags: [SFTP]
+      summary: 下载文件
+      description: |
+        返回二进制流（application/octet-stream），并设置 Content-Disposition 头触发浏览器下载。
+        该接口不使用 R<T> 封装。
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ticket
+          in: query
+          required: true
+          description: 一次性 SFTP ticket
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          description: 远程文件完整路径
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功（二进制流）
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/report:
+    post:
+      tags: [Monitor]
+      summary: 监控数据上报
+      description: Agent/Client 上报监控数据（该接口在安全白名单中，允许匿名访问）。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseMonitorModel'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/cpu-history:
+    get:
+      tags: [Monitor]
+      summary: 获取 CPU 负载历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+          description: 服务器 IP
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RCpuHistoryList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/disk-history:
+    get:
+      tags: [Monitor]
+      summary: 获取磁盘使用率历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+          description: 服务器 IP
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RStringObjectMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/net-history:
+    get:
+      tags: [Monitor]
+      summary: 获取网络流量历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+          description: 服务器 IP
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RStringObjectMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/base-info:
+    get:
+      tags: [Monitor]
+      summary: 获取服务器最新基础信息
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+          description: 服务器 IP
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RStringObjectMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/load-history:
+    get:
+      tags: [Monitor]
+      summary: 获取系统负载历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RStringObjectMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/disk-io-history:
+    get:
+      tags: [Monitor]
+      summary: 获取磁盘 IO 历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RStringObjectMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/monitor/temp-history:
+    get:
+      tags: [Monitor]
+      summary: 获取 CPU 温度历史
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema: { type: string }
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间（RFC3339 date-time）
+          example: 2025-12-22T11:39:29Z
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间（RFC3339 date-time）
+          example: 2025-12-22T12:39:29Z
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RCpuHistoryList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/agent/register:
+    post:
+      tags: [Agent]
+      summary: Agent 启动注册
+      description: 用于 Agent 启动时注册/更新自身信息；需要 X-Monitor-App-Secret 头。
+      security:
+        - MonitorAppSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRegister'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/agent/heartbeat:
+    post:
+      tags: [Agent]
+      summary: Agent 心跳
+      description: Agent 定时上报心跳；需要 X-Monitor-App-Secret 头。
+      security:
+        - MonitorAppSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentHeartbeat'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVoid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/server/list:
+    get:
+      tags: [Server]
+      summary: 获取服务器列表
+      description: 获取当前登录用户可见的服务器列表（按 createBy 过滤）。
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RServerInfoList'
+              examples:
+                example:
+                  value:
+                    code: 200
+                    msg: 操作成功
+                    data:
+                      - id: 11
+                        isOnline: false
+                        name: 虚拟机VM
+                        ip: 192.168.100.128
+                        port: 22
+                        username: root
+                        password: null
+                        privateKeyEnc: null
+                        keyPassphraseEnc: null
+                        privateKeyFingerprint: null
+                        hasPrivateKey: 0
+                        createBy: admin
+                        agentId: null
+                        createTime: "2025-12-22T17:44:25Z"
+                        updateTime: "2025-12-22T17:44:25Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        AccessToken。请求头：Authorization: Bearer <accessToken>
+
+        RefreshToken 不在此处建模，仅用于 /api/auth/refresh 的请求体。
+    MonitorAppSecret:
+      type: apiKey
+      in: header
+      name: X-Monitor-App-Secret
+      description: Agent 与 Server 的通信密钥（仅用于 /api/agent/*）。
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            badRequest:
+              value: { code: 400, msg: 参数错误, data: null }
+    Unauthorized:
+      description: 未认证/Token 无效或过期
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value: { code: 401, msg: 未授权，请登录, data: null }
+    Forbidden:
+      description: 无权限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value: { code: 403, msg: 当前操作没有权限, data: null }
+    ServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            serverError:
+              value: { code: 500, msg: 系统繁忙，请稍后再试, data: null }
+
+  schemas:
+    # ---- 通用响应封装 ----
+    RVoid:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: 业务状态码（200成功；其它表示失败）
+          example: 200
+        msg:
+          type: string
+          description: 提示信息
+          example: 操作成功
+        data:
+          description: 固定为 null
+          nullable: true
+          example: null
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/RVoid'
+      description: 统一错误响应（R<null>）
+
+    # ---- 登录/刷新 ----
+    LoginDTO:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: 用户名
+          example: admin
+        password:
+          type: string
+          format: password
+          description: 密码
+          example: "123456"
+    RegisterDTO:
+      type: object
+      required: [username, password, confirmPassword]
+      properties:
+        username:
+          type: string
+          description: 用户名
+          example: testuser
+        password:
+          type: string
+          format: password
+          description: 密码
+          example: "123456"
+        confirmPassword:
+          type: string
+          format: password
+          description: 确认密码
+          example: "123456"
+    TokenPair:
+      type: object
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+          description: AccessToken（JWT）
+          example: eyJhbGciOiJIUzI1NiJ9.xxx.yyy
+        refreshToken:
+          type: string
+          description: RefreshToken（用于换取新 Token）
+          example: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+    TokenPairMap:
+      type: object
+      description: 登录/刷新返回的 token 对（后端实际为 Map<String,String>，此处按固定键约束用于生成 SDK）
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+          description: AccessToken（JWT）
+          example: eyJhbGciOiJIUzI1NiJ9.xxx.yyy
+        refreshToken:
+          type: string
+          description: RefreshToken（用于换取新 Token）
+          example: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+      additionalProperties: false
+    RTokenPair:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/TokenPair'
+    RTokenPairMap:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/TokenPairMap'
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: RefreshToken
+          example: eyJhbGciOiJIUzI1NiJ9.aaa.bbb
+
+    # ---- 用户实体 ----
+    SysUser:
+      type: object
+      required: [id, username, role, deleted]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 用户ID
+          example: 2
+        permission:
+          type: array
+          nullable: true
+          description: 权限列表（后端从 SecurityContext 注入；列表接口通常为 null）
+          items:
+            type: string
+          example: ["ROLE_ADMIN", "server:add"]
+        username:
+          type: string
+          description: 用户名
+          example: admin
+        nickname:
+          type: string
+          nullable: true
+          description: 昵称
+          example: GGBond
+        password:
+          type: string
+          nullable: true
+          description: 密码（敏感字段；返回时通常为 null）
+          example: null
+        avatar:
+          type: string
+          nullable: true
+          description: 头像URL
+          example: https://example.com/avatar.png
+        email:
+          type: string
+          nullable: true
+          description: 邮箱
+          example: 666666@qq.com
+        bio:
+          type: string
+          nullable: true
+          description: 个人简介
+          example: 我是管理员
+        role:
+          type: string
+          description: 角色（ROLE_ADMIN/ROLE_USER）
+          example: ROLE_ADMIN
+        deleted:
+          type: integer
+          format: int32
+          description: 逻辑删除（0未删除；1已删除）
+          example: 0
+        createTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 创建时间（RFC3339）
+          example: "2025-12-08T16:03:22Z"
+        updateTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 更新时间（RFC3339）
+          example: "2025-12-10T15:53:33Z"
+
+    # ---- MyBatis-Plus IPage 结构 ----
+    SysUserPage:
+      type: object
+      required: [records, total, size, current, pages]
+      properties:
+        records:
+          type: array
+          description: 当前页数据
+          items:
+            $ref: '#/components/schemas/SysUser'
+        total:
+          type: integer
+          format: int64
+          description: 总记录数
+          example: 0
+        size:
+          type: integer
+          format: int64
+          description: 每页大小
+          example: 10
+        current:
+          type: integer
+          format: int64
+          description: 当前页码（从 1 开始）
+          example: 1
+        pages:
+          type: integer
+          format: int64
+          description: 总页数
+          example: 0
+
+    RSysUserPage:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/SysUserPage'
+
+    RSysUser:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/SysUser'
+
+    ServerInfo:
+      type: object
+      required: [id, name, ip, port, username, hasPrivateKey, createBy]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 服务器ID
+          example: 10
+        isOnline:
+          type: boolean
+          nullable: true
+          description: 在线状态（运行时计算字段，非数据库字段）
+          example: false
+        name:
+          type: string
+          description: 服务器别名
+          example: FirstDO
+        ip:
+          type: string
+          description: IP 地址
+          example: 104.248.145.176
+        port:
+          type: integer
+          format: int32
+          description: SSH 端口
+          example: 22
+        username:
+          type: string
+          description: SSH 用户名
+          example: root
+        password:
+          type: string
+          nullable: true
+          description: SSH 密码（返回时通常为 null；不应下发明文）
+          example: null
+        privateKeyEnc:
+          type: string
+          nullable: true
+          description: SSH 私钥（加密存储，Base64；不应下发给前端）
+          example: null
+        keyPassphraseEnc:
+          type: string
+          nullable: true
+          description: 私钥口令（加密存储；不应下发给前端）
+          example: null
+        privateKeyFingerprint:
+          type: string
+          nullable: true
+          description: 私钥指纹
+          example: "16860f16"
+        hasPrivateKey:
+          type: integer
+          format: int32
+          nullable: true
+          description: 是否配置私钥（1是；0否）
+          example: 1
+        createBy:
+          type: string
+          nullable: true
+          description: 创建人
+          example: admin
+        agentId:
+          type: string
+          nullable: true
+          description: Agent 唯一标识（自动发现时使用）
+          example: null
+        createTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 创建时间（RFC3339）
+          example: "2025-12-22T11:38:29Z"
+        updateTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 更新时间（RFC3339）
+          example: "2025-12-22T11:38:29Z"
+
+    RServerInfoList:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerInfo'
+
+    # ---- 补充：User/Profile/Password ----
+    UserProfileDTO:
+      type: object
+      properties:
+        nickname:
+          type: string
+          nullable: true
+          description: 用户昵称
+          example: GGBond
+        avatar:
+          type: string
+          nullable: true
+          description: 头像URL
+          example: https://example.com/avatar.png
+        email:
+          type: string
+          nullable: true
+          description: 邮箱
+          example: 666666@qq.com
+        bio:
+          type: string
+          nullable: true
+          description: 个人简介
+          example: 我是管理员
+
+    UpdatePasswordRequest:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          description: 原密码
+          example: "123456"
+        newPassword:
+          type: string
+          format: password
+          description: 新密码
+          example: "123456"
+
+    UpdatePasswordMap:
+      type: object
+      description: 修改密码入参（后端实际为 Map<String,String>，此处按固定键约束用于生成 SDK）
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          description: 原密码
+          example: "123456"
+        newPassword:
+          type: string
+          format: password
+          description: 新密码
+          example: "123456"
+      additionalProperties: false
+
+    CheckPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          description: 待校验的密码
+          example: "123456"
+
+    CheckPasswordMap:
+      type: object
+      description: 校验密码入参（后端实际为 Map<String,String>，此处按固定键约束用于生成 SDK）
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          description: 待校验的密码
+          example: "123456"
+      additionalProperties: false
+
+    DeleteAccountRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          description: 当前密码
+          example: "123456"
+
+    DeleteAccountMap:
+      type: object
+      description: 注销账号入参（后端实际为 Map<String,String>，此处按固定键约束用于生成 SDK）
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          description: 当前密码
+          example: "123456"
+      additionalProperties: false
+
+    RString:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: string
+          nullable: true
+          description: 字符串返回值
+          example: https://example.com/avatar.png
+
+    RBoolean:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: boolean
+          nullable: true
+          description: 布尔返回值
+          example: true
+
+    # ---- Server/SSH ----
+    SshConfigResponse:
+      type: object
+      required: [serverId, host, port, username, authPreferred, hasPrivateKey, sshTicket]
+      properties:
+        serverId:
+          type: integer
+          format: int64
+          description: 服务器ID
+          example: 10
+        host:
+          type: string
+          description: 主机地址
+          example: 104.248.145.176
+        port:
+          type: integer
+          format: int32
+          description: SSH 端口
+          example: 22
+        username:
+          type: string
+          description: SSH 用户名
+          example: root
+        authPreferred:
+          type: string
+          description: 推荐认证方式（publicKey/password）
+          example: publicKey
+        hasPrivateKey:
+          type: boolean
+          description: 是否配置私钥
+          example: true
+        fingerprint:
+          type: string
+          nullable: true
+          description: 私钥指纹
+          example: "16860f16"
+        sshTicket:
+          type: string
+          description: 一次性 sshTicket（短期有效）
+          example: 5f6c0a8b-xxxx
+
+    RSshConfigResponse:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/SshConfigResponse'
+
+    # ---- SFTP ----
+    SftpTicketResponse:
+      type: object
+      required: [serverId, sftpTicket, expiresAt]
+      properties:
+        serverId:
+          type: integer
+          format: int64
+          description: 服务器ID
+          example: 10
+        sftpTicket:
+          type: string
+          description: 一次性 SFTP ticket
+          example: 5f6c0a8b-xxxx
+        expiresAt:
+          type: string
+          format: date-time
+          description: 过期时间
+          example: "2025-12-22T11:39:29Z"
+
+    RSftpTicketResponse:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/SftpTicketResponse'
+
+    SftpListItem:
+      type: object
+      required: [name, path, type]
+      properties:
+        name:
+          type: string
+          description: 名称
+          example: logs
+        path:
+          type: string
+          description: 完整路径
+          example: /var/log
+        type:
+          type: string
+          description: 类型
+          enum: [FILE, DIR, LINK, OTHER]
+          example: DIR
+        size:
+          type: integer
+          format: int64
+          nullable: true
+          description: 文件大小（字节）
+          example: 1024
+        mtime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 修改时间
+          example: "2025-12-22T11:39:29Z"
+        permissions:
+          type: string
+          nullable: true
+          description: 权限字符串
+          example: rw-r--r--
+
+    RSftpList:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SftpListItem'
+
+    SftpUploadResponse:
+      type: object
+      required: [remotePath]
+      properties:
+        remotePath:
+          type: string
+          description: 远程保存路径
+          example: /tmp/a.txt
+        size:
+          type: integer
+          format: int64
+          nullable: true
+          description: 文件大小（字节）
+          example: 1024
+
+    RSftpUploadResponse:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          $ref: '#/components/schemas/SftpUploadResponse'
+
+    # ---- Monitor ----
+    BaseMonitorModel:
+      type: object
+      required: [agentId]
+      properties:
+        agentId:
+          type: string
+          description: 探针唯一标识
+          example: 2f2c8d58-xxxx
+        osName:
+          type: string
+          nullable: true
+          description: 操作系统名称
+          example: Linux
+        hostName:
+          type: string
+          nullable: true
+          description: 主机名
+          example: host-1
+        ip:
+          type: string
+          nullable: true
+          description: IP 地址
+          example: 104.248.145.176
+        cpuLoad:
+          type: number
+          format: double
+          nullable: true
+          description: CPU 使用率（0-100）
+          example: 12.3
+        memoryTotal:
+          type: number
+          format: double
+          nullable: true
+          description: 内存总量（GB）
+          example: 16.0
+        memoryUsed:
+          type: number
+          format: double
+          nullable: true
+          description: 内存已用（GB）
+          example: 8.0
+        diskTotal:
+          type: number
+          format: double
+          nullable: true
+          description: 磁盘总量（GB）
+          example: 100.0
+        diskUsed:
+          type: number
+          format: double
+          nullable: true
+          description: 磁盘已用（GB）
+          example: 50.0
+        diskUsage:
+          type: number
+          format: double
+          nullable: true
+          description: 磁盘使用率（%）
+          example: 50.0
+        netRecvRate:
+          type: number
+          format: double
+          nullable: true
+          description: 下行速率（KB/s）
+          example: 12.0
+        netSentRate:
+          type: number
+          format: double
+          nullable: true
+          description: 上行速率（KB/s）
+          example: 8.0
+        systemLoad1:
+          type: number
+          format: double
+          nullable: true
+          description: 系统负载（1分钟）
+          example: 0.1
+        systemLoad5:
+          type: number
+          format: double
+          nullable: true
+          description: 系统负载（5分钟）
+          example: 0.2
+        systemLoad15:
+          type: number
+          format: double
+          nullable: true
+          description: 系统负载（15分钟）
+          example: 0.3
+        upTime:
+          type: integer
+          format: int64
+          nullable: true
+          description: 系统运行时间（秒）
+          example: 3600
+        diskReadRate:
+          type: number
+          format: double
+          nullable: true
+          description: 磁盘读速率（KB/s）
+          example: 1.2
+        diskWriteRate:
+          type: number
+          format: double
+          nullable: true
+          description: 磁盘写速率（KB/s）
+          example: 0.8
+        topProcessesJson:
+          type: string
+          nullable: true
+          description: Top 进程列表（JSON 字符串）
+          example: "[{\"name\":\"java\",\"pid\":1,\"cpu\":10.0,\"mem\":20.0}]"
+        cpuTemperature:
+          type: number
+          format: double
+          nullable: true
+          description: CPU 温度（摄氏度）
+          example: 55.0
+
+    RStringObjectMap:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          description: Map<String, Object>
+          additionalProperties: true
+
+    RCpuHistoryList:
+      type: object
+      required: [code, msg, data]
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        msg:
+          type: string
+          example: 操作成功
+        data:
+          type: array
+          description: List<Map<String,Object>>
+          items:
+            type: object
+            additionalProperties: true
+
+    # ---- Agent ----
+    AgentRegister:
+      type: object
+      required: [agentId, hostname, ip]
+      properties:
+        agentId:
+          type: string
+          description: Agent 唯一标识
+          example: 2f2c8d58-xxxx
+        hostname:
+          type: string
+          description: 主机名
+          example: host-1
+        osName:
+          type: string
+          nullable: true
+          description: 操作系统
+          example: Linux
+        ip:
+          type: string
+          description: IP 地址
+          example: 104.248.145.176
+
+    AgentHeartbeat:
+      type: object
+      required: [agentId, timestamp]
+      properties:
+        agentId:
+          type: string
+          description: Agent 唯一标识
+          example: 2f2c8d58-xxxx
+        timestamp:
+          type: integer
+          format: int64
+          description: 时间戳（毫秒）
+          example: 1735633949000
+
+# root-level responses 已移除（统一使用 components.responses）
+
+security:
+  - BearerAuth: []
